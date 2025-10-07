@@ -1,0 +1,24 @@
+# Dependencies
+/node_modules
+
+# Environment variables
+.env
+
+# Image datasets in app_camara
+/apps/app_camara/data face human/
+/apps/app_camara/perro,gato,humano/
+
+# Log files
+*.log
+commit_log.txt
+
+# Temporary files
+temp_script.py
+
+# Large files
+/05 - Concursos y fondos/
+/05 - Concursos y fondos-20251006T202817Z-1-002.zip
+
+# Media and archive files
+*.mp4
+*.zip

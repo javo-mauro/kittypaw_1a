@@ -1,0 +1,17 @@
+{
+  "name": "kittypaw-monorepo",
+  "private": true,
+  "packageManager": "npm@10.8.2",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "node node_modules/turbo/bin/turbo dev",
+    "build": "turbo build"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.9",
+    "typescript": "^5.0.0",
+    "tsx": "^4.0.0"
+  }
+}
