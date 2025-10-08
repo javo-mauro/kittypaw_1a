@@ -21,11 +21,12 @@ Este documento es el tablero de control de tareas activas. Reemplaza al Roadmap 
 
 ## ⏳ En Progreso
 
-*   `[Arquitectura]` Implementar el Onboarding v2.0 y la Arquitectura de Datos v2.1. **[Owner: Mauro]**
+*   `[UX/UI]` Implementar `InteractiveWizardForm` y flujo de Onboarding v2.0. **[Owner: Mauro]**
 
 ---
 
 ## ✅ Completado
 
 *   `[Gestión]` Fase de Planificación y Documentación Estratégica. **[Owner: Ambos]**
-*   `[Frontend]` Construir la base de la aplicación (UI, componentes y servicios mock). **[Owner: Mauro]**
+*   `[Frontend]` Construir la base de la aplicación (UI, componentes y servicios mock).
+*   `[DB]` Implementar arquitectura de datos v2.1 con "Hogares".

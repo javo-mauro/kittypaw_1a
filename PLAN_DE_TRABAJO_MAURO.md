@@ -11,34 +11,42 @@
 
 ---
 
-### **NUEVA Sesión 3: Actualización del Esquema de Datos (v2.1)**
-*   **Objetivo:** Modificar el archivo `apps/app_principal/shared/schema.ts` para que refleje la nueva arquitectura de "Hogares".
-*   **Rama de Git:** `main`
-*   **Tarea Clave:** `[x]` Reescribir el `schema.ts` con las nuevas tablas (`households`, `pets_to_devices`) y las modificaciones a `users`, `pets` y `devices`.
+### **Sesión 3: Actualización del Esquema de Datos v2.1 (Completada)**
+*   **Estado:** ✅ Completado
+*   **Resultado:** El archivo `schema.ts` fue actualizado para reflejar la nueva arquitectura de "Hogares", sentando las bases para las nuevas funcionalidades.
 
 ---
 
-### **NUEVA Sesión 4: UI del Flujo de Onboarding (Mascotas y Dispositivos)**
-*   **Objetivo:** Construir la interfaz de usuario para los pasos de creación del onboarding v2.0.
-*   **Rama de Git:** `main`
-*   **Tareas Clave:**
-    *   `[ ]` Crear el modal y formulario para "Añadir Mascota", incluyendo el botón para la foto.
-    *   `[ ]` Crear la vista (placeholder) de la cámara para escanear QR.
-    *   `[ ]` Crear la vista para la selección de mascotas que usarán un dispositivo.
-
----
-
-### **NUEVA Sesión 5: Lógica de Servicios y Pruebas**
-*   **Objetivo:** Simular la lógica del nuevo flujo y asegurar la calidad.
+### **NUEVA Sesión 4: Diseño del Motor del Wizard**
+*   **Objetivo:** Crear el componente `InteractiveWizardForm.tsx` y la lógica para procesar un JSON de preguntas dinámico.
 *   **Rama de Git:** `main`
 *   **Tareas Clave:**
-    *   `[ ]` Actualizar `api.ts` con nuevas funciones simuladas (ej. `registerUserAndHousehold`, `createPet`).
-    *   `[ ]` Conectar la UI del onboarding a estos nuevos servicios.
-    *   `[ ]` Escribir una prueba unitaria para el nuevo formulario de "Añadir Mascota".
+    *   `[ ]` Definir la estructura final del JSON de preguntas.
+    *   `[ ]` Crear el componente base que renderiza un paso a la vez.
+    *   `[ ]` Implementar la barra de progreso y los botones de navegación "Siguiente/Anterior".
 
 ---
 
-### **Sesión 6, 7 y 8: Experimentación de Arquitecturas**
+### **NUEVA Sesión 5: Implementación de Inputs y Lógica de "Hogar"**
+*   **Objetivo:** Implementar los tipos de preguntas básicas y la lógica de auto-completado del formulario.
+*   **Rama de Git:** `main`
+*   **Tareas Clave:**
+    *   `[ ]` Crear los sub-componentes para cada tipo de pregunta (`text`, `select`, `boolean_buttons`).
+    *   `[ ]` Implementar la lógica que detecta un "Hogar" existente y salta o pre-rellena las preguntas adecuadas.
+
+---
+
+### **NUEVA Sesión 6: Enriquecimiento Visual y Animaciones**
+*   **Objetivo:** Pulir la experiencia de usuario del formulario para que sea un deleite visual.
+*   **Rama de Git:** `main`
+*   **Tareas Clave:**
+    *   `[ ]` Integrar `Framer Motion` para las transiciones entre preguntas.
+    *   `[ ]` Implementar los inputs ricos como las "tarjetas ilustradas".
+    *   `[ ]` Añadir los microtextos de ánimo y el feedback visual al seleccionar opciones.
+
+---
+
+### **Sesión 7, 8 y 9: Experimentación de Arquitecturas**
 *   **Objetivo:** Crear las 3 ramas (`local`, `nube-actual`, `nube-optimizada`) para implementar y comparar las diferentes arquitecturas de backend.
 *   **Rama de Git:** `feature/arquitectura-*`
 *   **Tareas Clave:** `[ ]` Iniciar la implementación del backend en cada una de las ramas según lo planeado.
