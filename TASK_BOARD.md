@@ -22,7 +22,7 @@ Este documento es el tablero de control de tareas activas. Reemplaza al Roadmap 
 
 ## ⏳ En Progreso
 
-*   `[Arquitectura]` Ejecutar plan de 5 sesiones para evaluación de arquitecturas (Local vs. Cloud). **[Owner: Mauro]**
+*   `[Planificación]` Ejecutar plan detallado de maduración de frontend y evaluación de arquitecturas. **[Owner: Mauro]**
 
 ---
 

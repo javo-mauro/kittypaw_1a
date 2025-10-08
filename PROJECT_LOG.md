@@ -25,3 +25,11 @@ Este documento es un registro cronológico de todas las sesiones de trabajo, ava
 ### SESIÓN INICIADA - Mauro - 2025-10-08 22:00:00
 - **Avance Técnico:** Se diagnosticó y corrigió un error en la ejecución del proyecto. El comando `npm run dev` fallaba porque el script `dev` no estaba definido en `apps/app_principal/package.json`. Se añadió el script para que apunte a `vite`, solucionando el problema de arranque del servidor de desarrollo.
 - **Próximo Paso:** Consolidar todo el progreso del frontend y esta corrección en un nuevo commit.
+
+### SESIÓN INICIADA - Mauro - 2025-10-08 22:30:00
+- **Avance Estratégico:** Se ha decidido refinar el plan de trabajo antes de la creación de ramas. Se introduce una nueva fase de "Maduración y Pruebas del Frontend".
+- **Detalles del Nuevo Plan:**
+    - Se detallaron los flujos de UX/UI para la creación de usuarios y mascotas.
+    - Se añadieron nuevas sesiones de trabajo (3, 4, 5) para implementar estos flujos y para establecer una base de pruebas automatizadas (Vitest).
+    - Las sesiones de experimentación de arquitecturas se han re-numerado a 6, 7 y 8.
+- **Próximo Paso:** Actualizar todos los documentos de planificación y guardar este nuevo plan en el repositorio antes de comenzar la Sesión 3.
