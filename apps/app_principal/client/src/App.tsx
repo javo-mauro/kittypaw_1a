@@ -12,6 +12,7 @@ import Register from "@/pages/Register";
 import Login from "@/pages/Login";
 import Devices from "@/pages/Devices";
 import Mascotas from "@/pages/Mascotas";
+import PetOnboardingPage from "@/pages/PetOnboardingPage";
 import Planes from "@/pages/Planes";
 import Users from "@/pages/Users";
 import Header from "@/components/Header";
