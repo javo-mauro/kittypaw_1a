@@ -1,27 +1,35 @@
 # Directrices de Operación para Gemini en el Proyecto KittyPaw
 
-**Versión Final:** 3.1
-
-## 1. Procedimiento de Inicio de Sesión Personalizado
-
-...
+**Versión:** 4.0
+**Asunto:** Protocolo de Inicio de Sesión Dinámico
 
 ---
 
-## 4. Protocolo de Onboarding para Javier (Primera Sesión)
+## Protocolo de Inicio de Sesión v4.0
 
-**Objetivo:** Dar un tour interactivo y entretenido del proyecto, enfocado en sus responsabilidades.
+**Objetivo:** Estandarizar el inicio de cada sesión de trabajo, identificar al usuario, registrar la actividad y alinear el foco con las tareas pendientes.
 
-*   **Paso 1: Bienvenida.**
-    *   Saluda: "¡Bienvenido a bordo, Javier! Como es tu primera vez, he preparado un tour rápido para ponerte al día. ¿Listo para empezar?"
-*   **Paso 2: El Entorno de Desarrollo (¡NUEVO!).**
-    *   Al recibir confirmación, explica: "¡Genial! Antes de sumergirnos en el código, lo primero es preparar tu entorno de desarrollo. Usamos Docker para que todo sea más fácil. **He preparado un manual paso a paso para ti llamado `MANUAL DE MAURO PARA JAVO.md`**. Lo encontrarás en la carpeta `docs/tech/Guias_de_Setup/`. Este manual es tu primer punto de partida. ¿Quieres que te resuma los pasos clave ahora o prefieres seguir con el tour del proyecto?"
-*   **Paso 3: El Plan Maestro.**
-    *   Explica: "Perfecto. Todo en este proyecto se guía por el `PLAN_MAESTRO_KITTYPAW.md` en la raíz. Es nuestro 'mapa'. Contiene la visión y enlaces a todo lo demás..."
-*   **Paso 4: Foco en IoT/Firmware.**
-    *   Explica: "Tu rol es clave: eres el dueño del **Hardware y Firmware**. La planificación para esto está en `apps/iot_firmware/`. El documento más importante para ti es el `DISEÑO_INTEGRAL_FIRMWARE.md`..."
-*   **Paso 5: Tareas Asignadas.**
-    *   Explica: "Para ver tus tareas concretas, usamos el `TASK_BOARD.md`. Ahí verás tareas etiquetadas con `[Owner: Javier]`..."
-*   **Paso 6: Visión del Ecosistema y Cierre.**
-    *   Explica: "Finalmente, para ver cómo tu trabajo se conecta con el resto del sistema, puedes consultar el `FLUJOS_DEL_ECOSISTEMA.md`. ¡Y eso es todo! Tour finalizado."
-    *   Finaliza el tour y procede con el inicio de sesión normal.
+**Instrucciones de Ejecución Obligatoria:**
+
+1.  **IDENTIFICACIÓN:** Al comenzar una nueva sesión, SIEMPRE Y SIN EXCEPCIÓN, saluda y formula la siguiente pregunta exacta:
+    > "Bienvenido a KittyPaw. Por favor, identifícate: ¿Eres Mauro o Javier?"
+
+2.  **REGISTRO DE SESIÓN:** Una vez que el usuario responda, realiza las siguientes acciones:
+    a.  Obtén la fecha y hora actual en formato `YYYY-MM-DD HH:MM:SS`.
+    b.  Lee el contenido de `PROJECT_LOG.md`.
+    c.  Añade una nueva entrada al final del archivo con el siguiente formato:
+        ```
+        ### SESIÓN INICIADA - [Nombre del Usuario] - [Fecha y Hora Actual]
+        ```
+    d.  Guarda los cambios en `PROJECT_LOG.md`.
+
+3.  **PRESENTACIÓN DE TAREAS:**
+    a.  Lee el contenido del archivo `TASK_BOARD.md`.
+    b.  Analiza las secciones `🚀 Tareas Priorizadas (To Do)` y `⏳ En Progreso`.
+    c.  Filtra la lista de tareas para mostrar ÚNICAMENTE aquellas que contengan la etiqueta del usuario identificado (ej. `[Owner: Mauro]` o `[Owner: Javier]`).
+    d.  Muestra la lista de tareas filtrada al usuario bajo el título "Tus tareas actuales son:".
+
+4.  **INICIO DE TRABAJO:** Finaliza el protocolo formulando la siguiente pregunta exacta:
+    > "Esas son tus tareas actuales. ¿En qué nos enfocaremos hoy?"
+
+---

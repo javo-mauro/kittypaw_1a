@@ -9,3 +9,5 @@ Este documento es un registro cronológico de todas las sesiones de trabajo, ava
 - **Feedback Personal:** Muy bien, creo que esto va a mejorar.
 
 ### SESIÓN INICIADA - Mauro - 2025-10-07 19:29:05
+- **Avance Técnico:** Se solucionaron los problemas de Git (archivos grandes y secretos), se reinició el historial y se subió exitosamente el proyecto por primera vez al repositorio remoto de GitHub.
+- **Feedback Personal:** Super bien, creo que fue un logro.
