@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getPetsByUserId, getConsumptionEventsByDeviceId } from '@/services/api';
+import { getPetsByHouseholdId, getConsumptionEventsByDeviceId } from '@/services/api';
 import type { Pet, ConsumptionEvent } from '@/services/api';
 import PetAvatar from '@/components/PetAvatar';
 import StatWidget from '@/components/StatWidget';
@@ -10,14 +10,14 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const FAKE_USER_ID = 1;
+    const FAKE_HOUSEHOLD_ID = 1;
     // In a real app, we'd get the device IDs from the user's devices
     const FAKE_DEVICE_ID_COMEDERO = 1; 
 
     const fetchData = async () => {
       try {
         setLoading(true);
-        const petsData = await getPetsByUserId(FAKE_USER_ID);
+        const petsData = await getPetsByHouseholdId(FAKE_HOUSEHOLD_ID);
         setPets(petsData);
 
         // Fetch events for a specific device to show some stats

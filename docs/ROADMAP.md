@@ -73,3 +73,27 @@ Este documento describe la hoja de ruta propuesta para el desarrollo continuo de
 ### 4.2. API Pública
 - **Tarea:** Diseñar y documentar una API para futuras integraciones.
 - **Resultado Esperado:** Apertura de la plataforma a nuevas posibilidades.
+
+---
+
+## Anexo: Plan de Implementación de Negocio por Fases
+
+Este anexo complementa el roadmap técnico con una visión de negocio.
+
+1.  **Fase Piloto / Beta:**
+    *   Lanzar con un hardware mínimo y la suscripción de Nivel Básico.
+    *   Enfocarse en un grupo pequeño de `early adopters` para recoger feedback.
+    *   Asegurar la calidad del producto y la fiabilidad del servicio.
+
+2.  **Fase de Lanzamiento Comercial:**
+    *   Lanzar el Nivel Plus para el mercado general.
+    *   Iniciar las campañas de marketing de adquisición de clientes.
+    *   Establecer las primeras alianzas con clínicas veterinarias.
+
+3.  **Fase de Crecimiento y Expansión:**
+    *   Agregar las funcionalidades avanzadas del Nivel Pro (IA, reconocimiento por cámara).
+    *   Expandir a nuevos mercados regionales o segmentos de cliente (ej. criadores, hoteles de mascotas).
+
+4.  **Fase de Ecosistema:**
+    *   Desarrollar la API pública.
+    *   Fomentar integraciones con terceros y explorar el modelo de marketplace.

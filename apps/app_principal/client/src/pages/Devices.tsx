@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getDevicesByUserId } from '@/services/api';
+import { getDevicesByHouseholdId } from '@/services/api';
 import type { Device } from '@/services/api';
 import DeviceCard from '@/components/DeviceCard'; // Import our new component
 
@@ -10,9 +10,9 @@ export default function Devices() {
 
   useEffect(() => {
     // We'll assume a hardcoded user ID for now, as auth is not in scope for this task.
-    const FAKE_USER_ID = 1;
+    const FAKE_HOUSEHOLD_ID = 1;
 
-    getDevicesByUserId(FAKE_USER_ID)
+    getDevicesByHouseholdId(FAKE_HOUSEHOLD_ID)
       .then(data => {
         setDevices(data);
       })
