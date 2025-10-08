@@ -33,3 +33,7 @@ Este documento es un registro cronológico de todas las sesiones de trabajo, ava
     - Se añadieron nuevas sesiones de trabajo (3, 4, 5) para implementar estos flujos y para establecer una base de pruebas automatizadas (Vitest).
     - Las sesiones de experimentación de arquitecturas se han re-numerado a 6, 7 y 8.
 - **Próximo Paso:** Actualizar todos los documentos de planificación y guardar este nuevo plan en el repositorio antes de comenzar la Sesión 3.
+
+### SESIÓN INICIADA - Mauro - 2025-10-08 23:00:00
+- **Avance Estratégico:** Se define y documenta la arquitectura de datos v2.1, introduciendo el concepto de "Hogares" (`households`) para soportar múltiples usuarios y la asociación de mascotas a dispositivos. Se actualizan todos los documentos de planificación (`DISEÑO_BASE_DE_DATOS.md`, `PLAN_DE_TRABAJO_MAURO.md`, `PROJECT_LOG.md`, `TASK_BOARD.md`) para reflejar esta nueva arquitectura y el plan de desarrollo detallado.
+- **Próximo Paso:** Iniciar la Nueva Sesión 3: Actualizar el `schema.ts` a la v2.1.

@@ -1,57 +1,70 @@
-# Diseño de la Base de Datos v2.0
+# Diseño de la Base de Datos v2.1
+
+**Autor:** Gemini (con feedback de Mauro)
+**Fecha:** 2025-10-08
 
 ## 1. Introducción
 
-Este documento presenta una estructura de base de datos revisada y optimizada para el ecosistema KittyPaw. El diseño está centrado en la claridad, la eficiencia de las consultas y la escalabilidad para soportar las funcionalidades definidas en el plan de negocio y producto.
+Esta versión del esquema de datos (v2.1) introduce el concepto de **"Hogar" (`Household`)** como la entidad central del sistema. Este cambio es fundamental para soportar múltiples usuarios (Dueños y Cuidadores) por cuenta y para crear una estructura de datos más escalable y alineada con el modelo de negocio.
 
 ---
 
-## 2. Diagrama Entidad-Relación (ERD)
+## 2. Diagrama Entidad-Relación (ERD) v2.1
 
 ```mermaid
 erDiagram
-    USERS {
+    HOUSEHOLDS {
         integer id PK
         string name
+    }
+
+    USERS {
+        integer id PK
+        integer household_id FK
+        string name
         string email UK
-        string password_hash
-        timestamp created_at
+        string role "owner o carer"
     }
 
     PETS {
         integer id PK
-        integer user_id FK
+        integer household_id FK
         string name
-        string species
-        string breed
-        date birth_date
+        string avatar_url
     }
 
     DEVICES {
         integer id PK
+        integer household_id FK
         string device_id UK
         string name
-        string mode "COMEDERO o BEBEDERO"
     }
 
-    USERS ||--o{ PETS : owns
-    USERS ||--o{ DEVICES : claims
+    PETS_TO_DEVICES {
+        integer pet_id FK
+        integer device_id FK
+    }
+
+    HOUSEHOLDS ||--|{ USERS : has
+    HOUSEHOLDS ||--|{ PETS : has
+    HOUSEHOLDS ||--|{ DEVICES : has
+
+    PETS }o--o{ PETS_TO_DEVICES : uses
+    DEVICES }o--o{ PETS_TO_DEVICES : is_used_by
 
     CONSUMPTION_EVENTS {
         integer id PK
         integer device_id FK
-        float amount_grams
-        integer duration_seconds
         timestamp timestamp
+        real amount_grams
     }
 
     DEVICES ||--o{ CONSUMPTION_EVENTS : generates
 ```
-*Nota: El diagrama omite algunas columnas por simplicidad. La relación entre `PETS` y `DEVICES` ahora es indirecta a través del `USER`.*
 
 ---
 
-## 3. Definición del Esquema (Drizzle ORM)
+## 3. Definición del Esquema (Drizzle ORM) v2.1
 
 Este es el código propuesto para `shared/schema.ts`.
 
@@ -59,38 +72,57 @@ Este es el código propuesto para `shared/schema.ts`.
 import { pgTable, text, serial, integer, timestamp, date, real, pgEnum } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-// ENUM para el modo del dispositivo, más seguro que un texto libre.
-export const deviceModeEnum = pgEnum('device_mode', ['comedero', 'bebedero']);
+// --- ENUMS ---
+export const userRoleEnum = pgEnum('user_role', ['owner', 'carer']);
+export const deviceModeEnum = pgEnum('device_mode', ['comedero', 'bebedero', 'collar', 'cama_inteligente']);
 
-// Tabla de Usuarios unificada
-export const users = pgTable("users", {
+// --- TABLAS PRINCIPALES ---
+
+// Nueva tabla central: Hogares
+export const households = pgTable("households", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
+  name: text("name").notNull(), // Ej: "Casa de Mauro"
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Tabla de Mascotas, simplificada y ligada directamente al usuario
+// Usuarios, ahora pertenecen a un Hogar
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  householdId: integer("household_id").notNull().references(() => households.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  role: userRoleEnum("role").notNull().default('carer'),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Mascotas, ahora pertenecen a un Hogar y tienen avatar
 export const pets = pgTable("pets", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  householdId: integer("household_id").notNull().references(() => households.id, { onDelete: 'cascade' }),
   name: text("name").notNull(),
   species: text("species"),
   breed: text("breed"),
   birthDate: date("birth_date"),
+  avatarUrl: text("avatar_url"), // URL a la imagen de perfil
 });
 
-// Tabla de Dispositivos, simplificada y ligada al usuario
+// Dispositivos, ahora pertenecen a un Hogar
 export const devices = pgTable("devices", {
   id: serial("id").primaryKey(),
-  deviceId: text("device_id").notNull().unique(), // ID físico del dispositivo (del QR)
-  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }), // Usuario que lo "reclamó"
-  name: text("name").notNull(), // Nombre dado por el usuario, ej: "Comedero Cocina"
+  householdId: integer("household_id").notNull().references(() => households.id, { onDelete: 'cascade' }),
+  deviceId: text("device_id").notNull().unique(), // ID físico del QR
+  name: text("name").notNull(), // Apodo del dispositivo
   mode: deviceModeEnum("mode").notNull(),
 });
 
-// Tabla de Eventos de Consumo, con columnas específicas y eficientes
+// Nueva tabla de unión para la relación Muchos-a-Muchos
+export const petsToDevices = pgTable("pets_to_devices", {
+    petId: integer("pet_id").notNull().references(() => pets.id, { onDelete: 'cascade' }),
+    deviceId: integer("device_id").notNull().references(() => devices.id, { onDelete: 'cascade' }),
+});
+
+// Eventos de consumo, sin cambios estructurales
 export const consumptionEvents = pgTable("consumption_events", {
   id: serial("id").primaryKey(),
   deviceId: integer("device_id").notNull().references(() => devices.id, { onDelete: 'cascade' }),
@@ -99,26 +131,41 @@ export const consumptionEvents = pgTable("consumption_events", {
   durationSeconds: integer("duration_seconds").notNull(),
 });
 
-// --- Definición de Relaciones ---
+// --- DEFINICIÓN DE RELACIONES ---
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const householdsRelations = relations(households, ({ many }) => ({
+  users: many(users),
   pets: many(pets),
   devices: many(devices),
 }));
 
-export const petsRelations = relations(pets, ({ one }) => ({
-  owner: one(users, {
-    fields: [pets.userId],
-    references: [users.id],
+export const usersRelations = relations(users, ({ one }) => ({
+  household: one(households, {
+    fields: [users.householdId],
+    references: [households.id],
   }),
 }));
 
-export const devicesRelations = relations(devices, ({ many, one }) => ({
-  owner: one(users, {
-    fields: [devices.userId],
-    references: [users.id],
+export const petsRelations = relations(pets, ({ one, many }) => ({
+  household: one(households, {
+    fields: [pets.householdId],
+    references: [households.id],
+  }),
+  petsToDevices: many(petsToDevices),
+}));
+
+export const devicesRelations = relations(devices, ({ one, many }) => ({
+  household: one(households, {
+    fields: [devices.householdId],
+    references: [households.id],
   }),
   consumptionEvents: many(consumptionEvents),
+  petsToDevices: many(petsToDevices),
+}));
+
+export const petsToDevicesRelations = relations(petsToDevices, ({ one }) => ({
+  pet: one(pets, { fields: [petsToDevices.petId], references: [pets.id] }),
+  device: one(devices, { fields: [petsToDevices.deviceId], references: [devices.id] }),
 }));
 
 export const consumptionEventsRelations = relations(consumptionEvents, ({ one }) => ({
@@ -131,9 +178,10 @@ export const consumptionEventsRelations = relations(consumptionEvents, ({ one })
 
 ---
 
-## 4. Justificación de los Cambios
+## 4. Justificación de los Cambios v2.1
 
-1.  **Tabla `users` Única:** Se consolida `users` y `pet_owners` en una sola tabla `users`, simplificando la autenticación y la gestión de usuarios.
-2.  **Relaciones Flexibles:** Se elimina la relación directa 1 a 1 entre `pets` y `devices`. Ahora, tanto mascotas como dispositivos pertenecen a un `user`. Esto permite que un usuario tenga múltiples mascotas y múltiples dispositivos. La lógica de qué mascota usa qué dispositivo se puede manejar a nivel de aplicación o con una tabla de enlace (`pets_to_devices`) en el futuro si fuera necesario, pero este diseño es mucho más flexible para empezar.
-3.  **Tabla `consumptionEvents` Optimizada:** Se reemplaza el `jsonb` por columnas tipadas (`real` para gramos, `integer` para segundos). Esto hace que las consultas agregadas (promedios, sumas, etc.) sean órdenes de magnitud más rápidas y eficientes, lo cual es crucial para el dashboard y la futura IA.
-4.  **Limpieza:** Se eliminan tablas como `mqtt_connections` que no pertenecen al core del modelo de datos de la aplicación, sino a una capa de servicio que puede ser gestionada de otra forma.
+1.  **Concepto de `Hogar`:** Centraliza la propiedad de los datos, permitiendo que múltiples usuarios compartan mascotas y dispositivos de forma segura. Resuelve la necesidad de roles "Dueño" y "Cuidador".
+2.  **Relación `pets_to_devices`:** Se introduce una tabla de unión para permitir una asociación flexible y de muchos-a-muchos entre mascotas y dispositivos, un requerimiento clave del negocio.
+3.  **Campo `avatarUrl`:** Se añade a la tabla `pets` para soportar la funcionalidad de fotos de perfil.
+4.  **Roles de Usuario:** La tabla `users` ahora tiene un campo `role` para gestionar permisos dentro de un `Hogar`.
+5.  **Escalabilidad de Dispositivos:** El `deviceModeEnum` se ha expandido para incluir futuros tipos de dispositivos como `collar` y `cama_inteligente`, demostrando visión a futuro.

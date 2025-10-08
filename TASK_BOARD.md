@@ -6,7 +6,6 @@ Este documento es el tablero de control de tareas activas. Reemplaza al Roadmap 
 
 ## 🎯 Backlog de Tareas
 
-*   `[Backend]` Actualizar el esquema de la base de datos en `shared/schema.ts` según el nuevo diseño. **[Owner: Ambos]**
 *   `[Backend]` Crear el endpoint `POST /api/devices/claim` para el onboarding. **[Owner: Ambos]**
 *   `[Frontend]` Crear el boceto de la vista para "Añadir Dispositivo" que incluirá el lector QR. **[Owner: Mauro]**
 *   `[Gestión]` Preparar la primera versión del Pitch Deck para postulación a fondos. **[Owner: Ambos]**
@@ -22,7 +21,7 @@ Este documento es el tablero de control de tareas activas. Reemplaza al Roadmap 
 
 ## ⏳ En Progreso
 
-*   `[Planificación]` Ejecutar plan detallado de maduración de frontend y evaluación de arquitecturas. **[Owner: Mauro]**
+*   `[Arquitectura]` Implementar el Onboarding v2.0 y la Arquitectura de Datos v2.1. **[Owner: Mauro]**
 
 ---
 
