@@ -4,11 +4,10 @@ export default function MobileNav() {
   const [location] = useLocation();
 
   const navItems = [
-    { path: '/', label: 'Dashboard', icon: 'dashboard' },
+    { path: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
     { path: '/devices', label: 'Dispositivos', icon: 'memory' },
-    { path: '/users', label: 'Usuarios', icon: 'people' },
-    { path: '/analytics', label: 'Análisis', icon: 'analytics' },
-    { path: '/register', label: 'Registro', icon: 'person_add' },
+    { path: '/mascotas', label: 'Mascotas', icon: 'pets' },
+    { path: '/settings', label: 'Ajustes', icon: 'settings' },
   ];
 
   return (

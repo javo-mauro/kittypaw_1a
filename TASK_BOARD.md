@@ -6,14 +6,6 @@ Este documento es el tablero de control de tareas activas. Reemplaza al Roadmap 
 
 ## 🎯 Backlog de Tareas
 
-*Aquí se añaden nuevas ideas y tareas que no son prioritarias aún.*
-
----
-
-## 🚀 Tareas Priorizadas (To Do)
-
-*   `[Firmware]` Configurar el proyecto en PlatformIO con las librerías necesarias. **[Owner: Javier]**
-*   `[Firmware]` Implementar la clase `WiFiManager` para la conexión. **[Owner: Javier]**
 *   `[Backend]` Actualizar el esquema de la base de datos en `shared/schema.ts` según el nuevo diseño. **[Owner: Ambos]**
 *   `[Backend]` Crear el endpoint `POST /api/devices/claim` para el onboarding. **[Owner: Ambos]**
 *   `[Frontend]` Crear el boceto de la vista para "Añadir Dispositivo" que incluirá el lector QR. **[Owner: Mauro]**
@@ -21,12 +13,20 @@ Este documento es el tablero de control de tareas activas. Reemplaza al Roadmap 
 
 ---
 
+## 🚀 Tareas Priorizadas (To Do)
+
+*   `[Firmware]` Configurar el proyecto en PlatformIO con las librerías necesarias. **[Owner: Javier]**
+*   `[Firmware]` Implementar la clase `WiFiManager` para la conexión. **[Owner: Javier]**
+
+---
+
 ## ⏳ En Progreso
 
-*Actualmente no hay tareas en progreso.*
+*   `[Arquitectura]` Ejecutar plan de 5 sesiones para evaluación de arquitecturas (Local vs. Cloud). **[Owner: Mauro]**
 
 ---
 
 ## ✅ Completado
 
 *   `[Gestión]` Fase de Planificación y Documentación Estratégica. **[Owner: Ambos]**
+*   `[Frontend]` Construir la base de la aplicación (UI, componentes y servicios mock). **[Owner: Mauro]**

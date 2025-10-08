@@ -36,11 +36,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   }, [isOpen, onClose]);
 
   const navItems = [
-    { path: '/', label: 'Dashboard', icon: 'dashboard' },
+    { path: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
     { path: '/devices', label: 'Dispositivos', icon: 'memory' },
-    { path: '/users', label: 'Usuarios', icon: 'people' },
+    { path: '/mascotas', label: 'Mascotas', icon: 'pets' },
     { path: '/settings', label: 'Configuración', icon: 'settings' },
-    { path: '/register', label: 'Registro', icon: 'person_add' },
   ];
 
   const sidebarClass = `w-64 bg-white shadow-lg fixed lg:relative z-10 h-full transition-transform duration-300 ease-in-out ${

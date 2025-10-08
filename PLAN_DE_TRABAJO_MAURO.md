@@ -9,8 +9,8 @@
 *   **Objetivo Principal:** Establecer el esqueleto navegable de la aplicación y la capa de comunicación con datos falsos.
 *   **Rama de Git:** `main`
 *   **Tareas Clave:**
-    *   \[ ] Crear el "Service Layer" en `apps/app_principal/client/src/services/api.ts` que defina las funciones (`getDevices`, `getPets`, etc.) y devuelva datos de prueba (mocks).
-    *   \[ ] Desarrollar la estructura principal de la aplicación: layout, sistema de navegación (ej. menú inferior) y las páginas vacías (Dashboard, Dispositivos, Mascotas, Perfil).
+    *   [x] Crear el "Service Layer" en `apps/app_principal/client/src/services/api.ts` que defina las funciones (`getDevices`, `getPets`, etc.) y devuelva datos de prueba (mocks).
+    *   [x] Desarrollar la estructura principal de la aplicación: layout, sistema de navegación (ej. menú inferior) y las páginas vacías (Dashboard, Dispositivos, Mascotas, Perfil).
 *   **Resultado Esperado:** Una aplicación que se puede abrir y en la que se puede navegar entre las diferentes secciones, aunque estas estén vacías o muestren datos estáticos.
 
 ---
@@ -20,9 +20,9 @@
 *   **Objetivo Principal:** Darle vida a la aplicación poblando las vistas con componentes y los datos de prueba.
 *   **Rama de Git:** `main`
 *   **Tareas Clave:**
-    *   \[ ] Desarrollar un conjunto básico de componentes de UI reutilizables (ej. `DeviceCard`, `PetAvatar`, `StatWidget`).
-    *   \[ ] Integrar estos componentes en sus respectivas páginas (Dashboard, Mis Dispositivos, etc.).
-    *   \[ ] Conectar las vistas al "Service Layer" para que muestren los datos de prueba.
+    *   [x] Desarrollar un conjunto básico de componentes de UI reutilizables (ej. `DeviceCard`, `PetAvatar`, `StatWidget`).
+    *   [x] Integrar estos componentes en sus respectivas páginas (Dashboard, Mis Dispositivos, etc.).
+    *   [x] Conectar las vistas al "Service Layer" para que muestren los datos de prueba.
 *   **Resultado Esperado:** Una aplicación que "parece" completamente funcional, con listas de dispositivos y mascotas de prueba. Un prototipo de alta fidelidad listo para ser conectado a un backend real.
 
 ---

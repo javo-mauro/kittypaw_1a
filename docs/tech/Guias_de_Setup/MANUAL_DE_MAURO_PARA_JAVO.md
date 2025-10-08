@@ -104,7 +104,39 @@ Aquí tienes un mapa de las carpetas más importantes:
 
 ---
 
-## Parte 6: Nuestro Flujo de Trabajo con Git y GitHub
+## Parte 6: Ejecutar la Aplicación Frontend (UI)
+
+Mientras que `docker-compose` se encarga de levantar el backend (la base de datos y el servidor), para trabajar en la interfaz de usuario (la parte visual de la aplicación que corre en el navegador), necesitas seguir estos pasos.
+
+Estos comandos se deben ejecutar en una **nueva terminal**, separada de la que usas para Docker.
+
+1.  **Instalar Dependencias del Proyecto:**
+    La primera vez que clonas el proyecto, o cada vez que haya nuevas librerías, necesitas instalar todas las dependencias. Este comando lee los archivos `package.json` de todo el proyecto y descarga todo lo necesario.
+    ```bash
+    npm install
+    ```
+
+2.  **Iniciar el Servidor de Desarrollo:**
+    Este comando utiliza Turborepo para iniciar el servidor de desarrollo del frontend (y cualquier otro servicio definido). Verás un output en tu terminal que te indicará en qué dirección puedes ver la aplicación.
+    ```bash
+    npm run dev
+    ```
+
+3.  **Abrir la Aplicación:**
+    Una vez que el comando anterior termine de compilar, tu terminal mostrará un mensaje similar a:
+
+    > `> app_principal-client:dev:`
+    > `> vite`
+    >
+    > `  VITE vX.X.X  ready in XXXms`
+    >
+    > `  ➜  Local:   http://localhost:5173/`
+
+    Abre tu navegador web y ve a la dirección que aparece en **Local** (generalmente `http://localhost:5173/`) para ver y interactuar con la aplicación KittyPaw.
+
+---
+
+## Parte 7: Nuestro Flujo de Trabajo con Git y GitHub
 
 Para mantener el código ordenado y colaborar de forma efectiva, seguiremos un flujo de trabajo simple basado en "ramas por funcionalidad" (feature branches).
 
