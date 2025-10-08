@@ -8,6 +8,7 @@ export default function MobileNav() {
     { path: '/devices', label: 'Dispositivos', icon: 'memory' },
     { path: '/mascotas', label: 'Mascotas', icon: 'pets' },
     { path: '/settings', label: 'Ajustes', icon: 'settings' },
+    { path: '/planes', label: 'Planes', icon: 'workspace_premium' },
   ];
 
   return (

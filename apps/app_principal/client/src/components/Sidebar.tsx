@@ -40,6 +40,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { path: '/devices', label: 'Dispositivos', icon: 'memory' },
     { path: '/mascotas', label: 'Mascotas', icon: 'pets' },
     { path: '/settings', label: 'Configuración', icon: 'settings' },
+    { path: '/planes', label: 'Planes', icon: 'workspace_premium' },
   ];
 
   const sidebarClass = `w-64 bg-white shadow-lg fixed lg:relative z-10 h-full transition-transform duration-300 ease-in-out ${

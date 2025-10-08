@@ -12,6 +12,7 @@ import Register from "@/pages/Register";
 import Login from "@/pages/Login";
 import Devices from "@/pages/Devices";
 import Mascotas from "@/pages/Mascotas";
+import Planes from "@/pages/Planes";
 import Users from "@/pages/Users";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
@@ -124,6 +125,9 @@ function Router() {
         </Route>
         <Route path="/settings">
           <PrivateRoute component={Settings} />
+        </Route>
+        <Route path="/planes">
+          <PrivateRoute component={Planes} />
         </Route>
         <Route path="/users">
           <PrivateRoute component={Users} />
