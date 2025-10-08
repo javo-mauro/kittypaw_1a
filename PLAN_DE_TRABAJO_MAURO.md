@@ -14,7 +14,7 @@
 ### **NUEVA Sesión 3: Actualización del Esquema de Datos (v2.1)**
 *   **Objetivo:** Modificar el archivo `apps/app_principal/shared/schema.ts` para que refleje la nueva arquitectura de "Hogares".
 *   **Rama de Git:** `main`
-*   **Tarea Clave:** `[ ]` Reescribir el `schema.ts` con las nuevas tablas (`households`, `pets_to_devices`) y las modificaciones a `users`, `pets` y `devices`.
+*   **Tarea Clave:** `[x]` Reescribir el `schema.ts` con las nuevas tablas (`households`, `pets_to_devices`) y las modificaciones a `users`, `pets` y `devices`.
 
 ---
 

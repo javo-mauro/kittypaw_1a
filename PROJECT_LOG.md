@@ -37,3 +37,7 @@ Este documento es un registro cronológico de todas las sesiones de trabajo, ava
 ### SESIÓN INICIADA - Mauro - 2025-10-08 23:00:00
 - **Avance Estratégico:** Se define y documenta la arquitectura de datos v2.1, introduciendo el concepto de "Hogares" (`households`) para soportar múltiples usuarios y la asociación de mascotas a dispositivos. Se actualizan todos los documentos de planificación (`DISEÑO_BASE_DE_DATOS.md`, `PLAN_DE_TRABAJO_MAURO.md`, `PROJECT_LOG.md`, `TASK_BOARD.md`) para reflejar esta nueva arquitectura y el plan de desarrollo detallado.
 - **Próximo Paso:** Iniciar la Nueva Sesión 3: Actualizar el `schema.ts` a la v2.1.
+
+### SESIÓN INICIADA - Mauro - 2025-10-08 23:30:00
+- **Avance Técnico:** Se completó la tarea de la Nueva Sesión 3. El archivo `apps/app_principal/shared/schema.ts` ha sido reescrito para implementar la arquitectura de datos v2.1, que incluye "Hogares", roles de usuario, y la relación muchos-a-muchos entre mascotas y dispositivos.
+- **Próximo Paso:** Iniciar la Nueva Sesión 4: UI del Flujo de Onboarding.
