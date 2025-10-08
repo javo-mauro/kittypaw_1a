@@ -3,18 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useLocation } from "wouter"; // To redirect on success
-
-// In a real app, this would be in api.ts, but we'll define it here for now
-// to show the concept.
-const registerUser = async (userData: any) => {
-  console.log("API MOCK: Registering user...", userData);
-  await new Promise(res => setTimeout(res, 1000));
-  // In a real app, the backend would create the user and household
-  // and return the new user object and a token.
-  return { id: Math.random(), name: userData.name, email: userData.email };
-};
-
+import { useLocation } from "wouter";
+import { registerUserAndHousehold } from '@/services/api'; // Import from our service layer
 
 export default function Register() {
   const [, setLocation] = useLocation();
@@ -40,8 +30,9 @@ export default function Register() {
 
     setLoading(true);
     try {
-      await registerUser({ name, email, password });
-      alert("¡Registro exitoso! Serás redirigido al login.");
+      // Call the function from our service layer
+      await registerUserAndHousehold({ name, email });
+      alert("¡Registro exitoso! Serás redirigido al login para iniciar sesión.");
       setLocation("/login"); // Redirect to login after successful registration
     } catch (err) {
       setError("Ocurrió un error durante el registro.");

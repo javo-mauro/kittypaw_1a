@@ -1,4 +1,5 @@
-import { defineConfig } from "vite";
+/// <reference types="vitest" />
+import { defineConfig } from 'vitest/config'; // Changed import
 import react from "@vitejs/plugin-react";
 import themePlugin from "@replit/vite-plugin-shadcn-theme-json";
 import path from "path";
@@ -41,5 +42,11 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+  },
+  // Add the test configuration
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './client/src/test/setup.ts', // We will create this file next
   },
 });

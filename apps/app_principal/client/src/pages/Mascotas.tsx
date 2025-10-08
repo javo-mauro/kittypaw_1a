@@ -1,20 +1,21 @@
 import { useEffect, useState } from 'react';
-import { getPetsByUserId } from '@/services/api';
+import { getPetsByHouseholdId, createPet } from '@/services/api'; // Import createPet
 import type { Pet } from '@/services/api';
 import PetAvatar from '@/components/PetAvatar';
 import { Button } from '@/components/ui/button';
-import AddPetModal from '@/components/AddPetModal'; // Import the modal
+import AddPetModal from '@/components/AddPetModal';
 
 export default function Mascotas() {
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    const FAKE_USER_ID = 1;
+    // In a real app, this would come from the logged-in user's context
+    const FAKE_HOUSEHOLD_ID = 1;
     
-    getPetsByUserId(FAKE_USER_ID)
+    getPetsByHouseholdId(FAKE_HOUSEHOLD_ID)
       .then(data => {
         setPets(data);
       })
@@ -27,20 +28,23 @@ export default function Mascotas() {
       });
   }, []);
 
-  const handlePetAdd = (petData: any) => {
-    // In a real app, we'd call the API service here to save the pet
-    // and then update the local state.
-    console.log("New pet to add:", petData);
-    // For now, we can just optimistically add it to the UI
-    const newPet = { ...petData, id: Math.random(), userId: 1 }; // Create a fake new pet
-    setPets(currentPets => [...currentPets, newPet]);
+  const handlePetAdd = async (petData: Omit<Pet, 'id' | 'householdId' | 'avatarUrl'>) => {
+    const FAKE_HOUSEHOLD_ID = 1; // This would come from user context
+    
+    try {
+      const newPet = await createPet(petData, FAKE_HOUSEHOLD_ID);
+      setPets(currentPets => [...currentPets, newPet]);
+    } catch (error) {
+      console.error("Error creating pet:", error);
+      // Here you would typically show an error toast to the user
+    }
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Mis Mascotas</h1>
-        <Button onClick={() => setIsModalOpen(true)}> {/* Open modal on click */}
+        <Button onClick={() => setIsModalOpen(true)}>
           <span className="material-icons mr-2">add</span>
           Añadir Mascota
         </Button>
@@ -58,7 +62,6 @@ export default function Mascotas() {
         </div>
       )}
 
-      {/* Render the modal */}
       <AddPetModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
