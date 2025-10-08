@@ -1,52 +1,47 @@
-# Plan de Trabajo para Mauro: Desarrollo y Evaluación de Arquitecturas (v3)
+# Plan de Trabajo para Mauro: Desarrollo y Evaluación de Arquitecturas (v4)
 
-**Objetivo:** Llegar a un punto de decisión sobre la arquitectura final de KittyPaw a través de un proceso de desarrollo estructurado, incluyendo una fase de maduración y pruebas del frontend.
+**Objetivo:** Implementar la "Ficha Integral de la Mascota" a través de un formulario interactivo y, posteriormente, evaluar las arquitecturas de backend.
 
 ---
 
-### **Sesión 1 y 2: Fundación del Frontend (Completadas)**
+### **Sesión 1-3: Fundaciones (Completadas)**
 
 *   **Estado:** ✅ Completado
-*   **Resultado:** Se construyó una aplicación base con una UI funcional, componentes reutilizables, navegación y una capa de servicios con datos de prueba.
+*   **Resultado:** Se construyó la base del frontend, se definió y se implementó la arquitectura de datos v2.2 en `DISEÑO_BASE_DE_DATOS.md` y `schema.ts`.
 
 ---
 
-### **Sesión 3: Actualización del Esquema de Datos v2.1 (Completada)**
-*   **Estado:** ✅ Completado
-*   **Resultado:** El archivo `schema.ts` fue actualizado para reflejar la nueva arquitectura de "Hogares", sentando las bases para las nuevas funcionalidades.
-
----
-
-### **NUEVA Sesión 4: Diseño del Motor del Wizard**
-*   **Objetivo:** Crear el componente `InteractiveWizardForm.tsx` y la lógica para procesar un JSON de preguntas dinámico.
+### **NUEVA Sesión 4: El Motor del "Formulario Mágico"**
+*   **Objetivo:** Construir el componente reutilizable `InteractiveWizardForm.tsx`.
 *   **Rama de Git:** `main`
 *   **Tareas Clave:**
-    *   `[ ]` Definir la estructura final del JSON de preguntas.
-    *   `[ ]` Crear el componente base que renderiza un paso a la vez.
-    *   `[ ]` Implementar la barra de progreso y los botones de navegación "Siguiente/Anterior".
+    *   `[ ]` Crear el archivo `lib/forms.ts` para definir la estructura de preguntas en JSON.
+    *   `[ ]` Crear el componente `InteractiveWizardForm.tsx` que procesa el JSON.
+    *   `[ ]` Implementar la barra de progreso y la navegación "Siguiente/Anterior".
 
 ---
 
-### **NUEVA Sesión 5: Implementación de Inputs y Lógica de "Hogar"**
-*   **Objetivo:** Implementar los tipos de preguntas básicas y la lógica de auto-completado del formulario.
+### **NUEVA Sesión 5: Implementación de la Sección "Identificación"**
+*   **Objetivo:** Construir la primera sección del formulario.
 *   **Rama de Git:** `main`
 *   **Tareas Clave:**
-    *   `[ ]` Crear los sub-componentes para cada tipo de pregunta (`text`, `select`, `boolean_buttons`).
-    *   `[ ]` Implementar la lógica que detecta un "Hogar" existente y salta o pre-rellena las preguntas adecuadas.
+    *   `[ ]` Añadir las preguntas de "Identificación general" al JSON en `lib/forms.ts`.
+    *   `[ ]` Crear los componentes de input necesarios (texto, fecha, subida de foto simulada).
+    *   `[ ]` Integrar la sección en el motor del Wizard.
 
 ---
 
-### **NUEVA Sesión 6: Enriquecimiento Visual y Animaciones**
-*   **Objetivo:** Pulir la experiencia de usuario del formulario para que sea un deleite visual.
+### **NUEVA Sesión 6: Implementación de la Sección "Salud" y "Hogar"**
+*   **Objetivo:** Construir las secciones de antecedentes veterinarios y del hogar.
 *   **Rama de Git:** `main`
 *   **Tareas Clave:**
-    *   `[ ]` Integrar `Framer Motion` para las transiciones entre preguntas.
-    *   `[ ]` Implementar los inputs ricos como las "tarjetas ilustradas".
-    *   `[ ]` Añadir los microtextos de ánimo y el feedback visual al seleccionar opciones.
+    *   `[ ]` Añadir las preguntas de "Estado de salud" e "Información del hogar" al JSON.
+    *   `[ ]` Implementar los componentes de input necesarios (botones ilustrados, selectores múltiples).
+    *   `[ ]` Implementar la lógica para omitir preguntas del hogar si ya existen los datos.
 
 ---
 
-### **Sesión 7, 8 y 9: Experimentación de Arquitecturas**
-*   **Objetivo:** Crear las 3 ramas (`local`, `nube-actual`, `nube-optimizada`) para implementar y comparar las diferentes arquitecturas de backend.
-*   **Rama de Git:** `feature/arquitectura-*`
-*   **Tareas Clave:** `[ ]` Iniciar la implementación del backend en cada una de las ramas según lo planeado.
+### **Siguientes Sesiones:**
+*   Implementación del resto de las secciones del formulario (Convivencia, Alimentación, etc.).
+*   Fase de Pruebas exhaustivas del nuevo formulario.
+*   Fase de Experimentación de Arquitecturas (creación de las 3 ramas).

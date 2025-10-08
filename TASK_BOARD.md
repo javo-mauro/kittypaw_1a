@@ -21,7 +21,7 @@ Este documento es el tablero de control de tareas activas. Reemplaza al Roadmap 
 
 ## ⏳ En Progreso
 
-*   `[UX/UI]` Implementar `InteractiveWizardForm` y flujo de Onboarding v2.0. **[Owner: Mauro]**
+*   `[UX/UI]` Diseñar e implementar la "Ficha Integral de la Mascota" (Formulario Mágico). **[Owner: Mauro]**
 
 ---
 
@@ -29,4 +29,4 @@ Este documento es el tablero de control de tareas activas. Reemplaza al Roadmap 
 
 *   `[Gestión]` Fase de Planificación y Documentación Estratégica. **[Owner: Ambos]**
 *   `[Frontend]` Construir la base de la aplicación (UI, componentes y servicios mock).
-*   `[DB]` Implementar arquitectura de datos v2.1 con "Hogares".
+*   `[DB]` Implementar arquitectura de datos v2.2 con "Hogares".
