@@ -9,7 +9,7 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground pt-20;
+    @apply font-sans antialiased bg-background text-foreground pt-20 overflow-y-scroll;
     font-family: 'Varela Round', sans-serif;
     color: #2A363B;
   }

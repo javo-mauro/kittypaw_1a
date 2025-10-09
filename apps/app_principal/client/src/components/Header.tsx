@@ -66,7 +66,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
               </button>
             </Link>
           ) : (
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <div className="flex items-center cursor-pointer">
                   <div className="mr-3 text-right hidden md:block">
