@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLocation } from "wouter";
-import { registerUserAndHousehold } from '@/services/api'; // Import from our service layer
+import { registerUserAndHousehold } from '@/services/api';
+import InfoModal from '@/components/ui/InfoModal';
 
 export default function Register() {
   const [, setLocation] = useLocation();
@@ -14,6 +15,7 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,16 +32,19 @@ export default function Register() {
 
     setLoading(true);
     try {
-      // Call the function from our service layer
       await registerUserAndHousehold({ name, email });
-      alert("¡Registro exitoso! Serás redirigido al login para iniciar sesión.");
-      setLocation("/login"); // Redirect to login after successful registration
+      setIsModalOpen(true);
     } catch (err) {
       setError("Ocurrió un error durante el registro.");
       console.error(err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setLocation("/login");
   };
 
   return (
@@ -105,6 +110,13 @@ export default function Register() {
           </form>
         </CardContent>
       </Card>
+
+      <InfoModal 
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        title="¡Registro Exitoso!"
+        message="Serás redirigido para iniciar sesión."
+      />
     </div>
   );
 }
