@@ -1,4 +1,4 @@
-export type QuestionType = 'text' | 'date' | 'photo' | 'choice' | 'illustratedChoice';
+export type QuestionType = 'text' | 'date' | 'photo' | 'choice' | 'illustratedChoice' | 'multiChoice';
 
 export interface QuestionOption {
   value: string;
@@ -147,6 +147,17 @@ const petOnboardingSections: FormSection[] = [
           { value: 'none', label: 'Nunca' },
           { value: 'supervised', label: 'Solo con supervisión' },
           { value: 'free', label: 'Libremente' },
+        ]
+      },
+      {
+        id: 'favoriteToys',
+        label: 'Juguetes favoritos',
+        type: 'multiChoice',
+        options: [
+          { value: 'balls', label: 'Pelotas' },
+          { value: 'strings', label: 'Cuerdas' },
+          { value: 'rodents', label: 'Ratones de juguete' },
+          { value: 'scratchers', label: 'Rascadores' },
         ]
       },
     ]

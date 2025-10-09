@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import IllustratedChoiceInput from '@/components/ui/IllustratedChoiceInput';
+import MultiChoiceInput from '@/components/ui/MultiChoiceInput';
 
 interface InteractiveWizardFormProps {
   sections: FormSection[];
@@ -102,6 +103,14 @@ const InteractiveWizardForm: React.FC<InteractiveWizardFormProps> = ({ sections,
           <IllustratedChoiceInput
             options={question.options || []}
             value={value || ''}
+            onChange={(val) => handleInputChange(question.id, val)}
+          />
+        );
+      case 'multiChoice':
+        return (
+          <MultiChoiceInput
+            options={question.options || []}
+            value={value || []}
             onChange={(val) => handleInputChange(question.id, val)}
           />
         );
