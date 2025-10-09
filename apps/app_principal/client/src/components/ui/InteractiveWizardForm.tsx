@@ -119,7 +119,7 @@ const InteractiveWizardForm: React.FC<InteractiveWizardFormProps> = ({ sections,
 
       <div className="w-full bg-gray-200 rounded-full h-2.5 mb-6">
         <div
-          className="bg-blue-600 h-2.5 rounded-full"
+          className="bg-primary h-2.5 rounded-full"
           style={{ width: `${((currentSectionIndex + 1) / sections.length) * 100}%` }}
         ></div>
       </div>

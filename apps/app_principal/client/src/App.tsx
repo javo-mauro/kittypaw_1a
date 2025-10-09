@@ -12,14 +12,12 @@ import Register from "@/pages/Register";
 import Login from "@/pages/Login";
 import Devices from "@/pages/Devices";
 import Mascotas from "@/pages/Mascotas";
-import PetOnboardingPage from "@/pages/PetOnboardingPage";
 import Planes from "@/pages/Planes";
 import Users from "@/pages/Users";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import { useState, useEffect } from "react";
-import { WebSocketProvider } from "@/contexts/WebSocketContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -145,10 +143,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <WebSocketProvider>
-          <Router />
-          <Toaster />
-        </WebSocketProvider>
+        <Router />
+        <Toaster />
       </AuthProvider>
     </QueryClientProvider>
   );

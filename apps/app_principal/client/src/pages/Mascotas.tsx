@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
-import { useLocation } from 'wouter';
 import { getPetsByHouseholdId } from '@/services/api';
 import type { Pet } from '@/services/api';
 import PetAvatar from '@/components/PetAvatar';
 import { Button } from '@/components/ui/button';
+import PetOnboardingModal from '@/components/PetOnboardingModal';
 
 export default function Mascotas() {
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [, setLocation] = useLocation();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const FAKE_HOUSEHOLD_ID = 1;
@@ -31,7 +31,7 @@ export default function Mascotas() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Mis Mascotas</h1>
-        <Button onClick={() => setLocation('/mascotas/nuevo')}>
+        <Button onClick={() => setIsModalOpen(true)}>
           <span className="material-icons mr-2">add</span>
           Añadir Mascota
         </Button>
@@ -48,6 +48,11 @@ export default function Mascotas() {
           ))}
         </div>
       )}
+
+      <PetOnboardingModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }

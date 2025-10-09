@@ -24,10 +24,10 @@ export interface FormSection {
   questions: Question[];
 }
 
-export const petOnboardingSections: FormSection[] = [
+const petOnboardingSections: FormSection[] = [
   {
-    id: 'identification',
-    title: 'Identificación de la Mascota',
+    id: 'petName',
+    title: 'Comencemos con el nombre',
     questions: [
       {
         id: 'petName',
@@ -35,9 +35,15 @@ export const petOnboardingSections: FormSection[] = [
         type: 'text',
         placeholder: 'Ej: Mishi, Rocky, Luna'
       },
+    ]
+  },
+  {
+    id: 'petSpeciesAndBreed',
+    title: '¿Qué tipo de mascota es?',
+    questions: [
       {
         id: 'petSpecies',
-        label: '¿Qué especie es?',
+        label: 'Especie',
         type: 'illustratedChoice',
         options: [
           { value: 'cat', label: 'Gato', illustration: 'Cat' },
@@ -46,13 +52,19 @@ export const petOnboardingSections: FormSection[] = [
       },
       {
         id: 'petBreed',
-        label: '¿De qué raza es?',
+        label: 'Raza',
         type: 'text',
         placeholder: 'Ej: Siamés, Golden Retriever, Mestizo'
       },
+    ]
+  },
+  {
+    id: 'petBirthdateAndPhoto',
+    title: 'Unos detalles más',
+    questions: [
       {
         id: 'petBirthdate',
-        label: 'Fecha de nacimiento',
+        label: 'Fecha de nacimiento (aprox.)',
         type: 'date',
       },
       {
@@ -84,6 +96,12 @@ export const petOnboardingSections: FormSection[] = [
           { value: 'no', label: 'No' },
         ]
       },
+    ]
+  },
+  {
+    id: 'healthDetails',
+    title: 'Salud de la Mascota',
+    questions: [
       {
         id: 'allergies',
         label: '¿Tiene alguna alergia conocida?',
@@ -135,3 +153,5 @@ export const petOnboardingSections: FormSection[] = [
   },
   // ... más secciones aquí
 ];
+
+export default petOnboardingSections;
