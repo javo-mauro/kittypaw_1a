@@ -1,20 +1,30 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, Router } from "express";
 import { createServer, type Server } from "http";
+import express, { type Express, type Request, type Response, type Router } from "express";
+import { createServer, type Server as HttpServer } from "http";
 import { storage } from "./storage";
 import { mqttClient } from "./mqtt";
 import { WebSocketServer, WebSocket } from "ws";
 import { z } from "zod";
-import { insertDeviceSchema, insertUserSchema, insertMqttConnectionSchema } from "@shared/schema";
+import {
+  insertDeviceSchema,
+  insertUserSchema,
+  insertMqttConnectionSchema,
+  insertPetSchema,
+} from "@shared/schema";
 import { log } from "./vite";
 
 // Handles initial setup and regular data generation when no real MQTT data is available
 let dataGenerationInterval: NodeJS.Timeout | null = null;
 
 export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: Express): Promise<HttpServer> {
   const httpServer = createServer(app);
+  const apiRouter: Router = express.Router();
 
   // Setup WebSocket server
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  const wss = new WebSocketServer({ noServer: true });
 
   wss.on('connection', (ws: WebSocket) => {
     // Add client to MQTT broadcast list
@@ -48,9 +58,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     sendInitialData(ws);
   });
 
+  httpServer.on('upgrade', (request, socket, head) => {
+    if (request.url === '/ws') {
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        wss.emit('connection', ws, request);
+      });
+    } else {
+      socket.destroy();
+    }
+  });
+
+
   // API routes
   // Endpoint para inicio de sesión
   app.post('/api/auth/login', async (req: Request, res: Response) => {
+  apiRouter.post('/auth/login', async (req: Request, res: Response) => {
     try {
       const { username, password } = req.body;
       
@@ -119,11 +141,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post('/api/auth/logout', async (req: Request, res: Response) => {
+  apiRouter.post('/auth/logout', async (req: Request, res: Response) => {
     // En una aplicación real, aquí invalidaríamos la sesión
     res.json({ success: true, message: 'Sesión cerrada exitosamente' });
   });
   
   app.get('/api/user/current', async (req: Request, res: Response) => {
+  apiRouter.get('/user/current', async (req: Request, res: Response) => {
     // En un sistema real, obtendríamos el ID del usuario de la sesión
     // Por ahora, usamos el ID proporcionado en la solicitud, o el usuario 1 por defecto
     const userId = parseInt(req.query.userId as string) || 1;
@@ -139,6 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get('/api/users', async (req: Request, res: Response) => {
+  apiRouter.get('/users', async (req: Request, res: Response) => {
     try {
       // Obtener todos los usuarios del sistema desde el storage
       // Ahora solo mostramos a Javier Dayne como administrador
@@ -155,6 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/auth/switch-user', async (req: Request, res: Response) => {
+  apiRouter.post('/auth/switch-user', async (req: Request, res: Response) => {
     try {
       const { username } = req.body;
       if (!username) {
@@ -246,6 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get('/api/devices', async (req: Request, res: Response) => {
+  apiRouter.get('/devices', async (req: Request, res: Response) => {
     try {
       // Verificar si se solicitan dispositivos para un usuario específico
       const userId = req.query.userId ? parseInt(req.query.userId as string) : null;
@@ -299,6 +326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/devices', async (req: Request, res: Response) => {
+  apiRouter.post('/devices', async (req: Request, res: Response) => {
     try {
       const deviceData = insertDeviceSchema.parse(req.body);
       const device = await storage.createDevice(deviceData);
@@ -320,6 +348,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get('/api/devices/:deviceId', async (req: Request, res: Response) => {
+  apiRouter.get('/devices/:deviceId', async (req: Request, res: Response) => {
     const device = await storage.getDeviceByDeviceId(req.params.deviceId);
     if (device) {
       res.json(device);
@@ -329,6 +358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get('/api/sensor-data/:deviceId', async (req: Request, res: Response) => {
+  apiRouter.get('/sensor-data/:deviceId', async (req: Request, res: Response) => {
     const { deviceId } = req.params;
     const { type, limit } = req.query;
     
@@ -350,11 +380,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get('/api/latest-readings', async (req: Request, res: Response) => {
+  apiRouter.get('/latest-readings', async (req: Request, res: Response) => {
     const readings = await storage.getLatestReadings();
     res.json(readings);
   });
 
   app.get('/api/system/metrics', async (req: Request, res: Response) => {
+  apiRouter.get('/system/metrics', async (req: Request, res: Response) => {
     const metrics = await storage.getSystemMetrics();
     res.json(metrics);
   });
@@ -368,6 +400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get('/api/mqtt/status', async (req: Request, res: Response) => {
+  apiRouter.get('/mqtt/status', async (req: Request, res: Response) => {
     const connection = await storage.getMqttConnectionByUserId(1);
     if (connection) {
       // Don't send password or certificate information in the response
@@ -388,6 +421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/mqtt/connect', async (req: Request, res: Response) => {
+  apiRouter.post('/mqtt/connect', async (req: Request, res: Response) => {
     try {
       const connectionData = insertMqttConnectionSchema.parse(req.body);
       const connection = await storage.createMqttConnection(connectionData);
@@ -426,6 +460,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Pet owner endpoints
   app.get('/api/pet-owners', async (req: Request, res: Response) => {
+  apiRouter.get('/pet-owners', async (req: Request, res: Response) => {
     try {
       const owners = await storage.getPetOwners();
       res.json(owners);
@@ -436,6 +471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get('/api/pet-owners/:id', async (req: Request, res: Response) => {
+  apiRouter.get('/pet-owners/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const owner = await storage.getPetOwner(id);
@@ -452,6 +488,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/pet-owners', async (req: Request, res: Response) => {
+  apiRouter.post('/pet-owners', async (req: Request, res: Response) => {
     try {
       const owner = req.body;
       console.log("Datos recibidos del cliente:", owner);
@@ -469,6 +506,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.put('/api/pet-owners/:id', async (req: Request, res: Response) => {
+  apiRouter.put('/pet-owners/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const owner = req.body;
@@ -481,6 +519,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete('/api/pet-owners/:id', async (req: Request, res: Response) => {
+  apiRouter.delete('/pet-owners/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const result = await storage.deletePetOwner(id);
@@ -496,96 +535,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Pet endpoints
-  app.get('/api/pets', async (req: Request, res: Response) => {
+  // --- Rutas para Mascotas (Pet) ---
+  const petRouter: Router = app.loopback.Router();
+  const petRouter: Router = express.Router();
+
+  petRouter.get('/', async (req: Request, res: Response) => {
     try {
       const pets = await storage.getPets();
       res.json(pets);
     } catch (error) {
       console.error('Error fetching pets:', error);
-      res.status(500).json({ message: 'Error al obtener las mascotas' });
+      res.status(500).json({ error: 'Failed to fetch pets' });
     }
   });
 
-  app.get('/api/pets/:id', async (req: Request, res: Response) => {
+  petRouter.get('/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const pet = await storage.getPet(id);
-      
       if (!pet) {
-        return res.status(404).json({ message: 'Mascota no encontrada' });
+        return res.status(404).json({ error: 'Pet not found' });
       }
-      
       res.json(pet);
     } catch (error) {
       console.error('Error fetching pet:', error);
-      res.status(500).json({ message: 'Error al obtener la mascota' });
+      res.status(500).json({ error: 'Failed to fetch pet' });
     }
   });
 
-  app.get('/api/pet-owners/:ownerId/pets', async (req: Request, res: Response) => {
+  petRouter.post('/', async (req: Request, res: Response) => {
     try {
-      const ownerId = parseInt(req.params.ownerId);
-      const pets = await storage.getPetsByOwnerId(ownerId);
-      res.json(pets);
-    } catch (error) {
-      console.error('Error fetching owner pets:', error);
-      res.status(500).json({ message: 'Error al obtener las mascotas del dueño' });
-    }
-  });
-
-  app.post('/api/pets', async (req: Request, res: Response) => {
-    try {
-      const pet = req.body;
-      console.log("Datos de mascota recibidos:", pet);
-      const newPet = await storage.createPet(pet);
-      console.log("Nueva mascota creada:", newPet);
-      
-      // Si la mascota tiene un dispositivo KittyPaw asociado, suscribirnos al topic
-      if (newPet.kittyPawDeviceId) {
-        mqttClient.addTopic(newPet.kittyPawDeviceId);
-        log(`Auto-subscribing to pet's KittyPaw device topic: ${newPet.kittyPawDeviceId}`, 'express');
-      }
-      
-      // Asegurarse de que estamos enviando los encabezados correctos
-      res.setHeader('Content-Type', 'application/json');
+      const petData = insertPetSchema.parse(req.body);
+      const newPet = await storage.createPet(petData);
       res.status(201).json(newPet);
-      console.log("Respuesta enviada al cliente:", JSON.stringify(newPet));
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
       console.error('Error creating pet:', error);
-      res.status(500).json({ message: 'Error al crear la mascota' });
+      res.status(500).json({ error: 'Failed to create pet' });
     }
   });
 
-  app.put('/api/pets/:id', async (req: Request, res: Response) => {
+  petRouter.put('/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const pet = req.body;
-      const updatedPet = await storage.updatePet(id, pet);
+      const petData = insertPetSchema.partial().parse(req.body);
+      const updatedPet = await storage.updatePet(id, petData);
       res.json(updatedPet);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
       console.error('Error updating pet:', error);
-      res.status(500).json({ message: 'Error al actualizar la mascota' });
+      res.status(500).json({ error: 'Failed to update pet' });
     }
   });
 
-  app.delete('/api/pets/:id', async (req: Request, res: Response) => {
+  petRouter.delete('/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const result = await storage.deletePet(id);
-      
       if (!result) {
-        return res.status(404).json({ message: 'Mascota no encontrada' });
+        return res.status(404).json({ error: 'Pet not found' });
       }
-      
-      res.json({ message: 'Mascota eliminada con éxito' });
+      res.status(204).send();
     } catch (error) {
       console.error('Error deleting pet:', error);
-      res.status(500).json({ message: 'Error al eliminar la mascota' });
+      res.status(500).json({ error: 'Failed to delete pet' });
     }
   });
 
+  app.use('/api/pets', petRouter);
+  apiRouter.use('/pets', petRouter);
+
   app.get('/api/devices/:deviceId/pet', async (req: Request, res: Response) => {
+  apiRouter.get('/devices/:deviceId/pet', async (req: Request, res: Response) => {
     try {
       const deviceId = req.params.deviceId;
       const pet = await storage.getPetByKittyPawDeviceId(deviceId);
@@ -603,6 +628,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Endpoint para suscribirse a un nuevo tópico MQTT
   app.post('/api/mqtt/subscribe', async (req: Request, res: Response) => {
+  apiRouter.post('/mqtt/subscribe', async (req: Request, res: Response) => {
     try {
       const { topic } = req.body;
       
@@ -620,6 +646,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Endpoint para generar datos simulados para un dispositivo específico o todos los dispositivos
   app.post('/api/simulate-data', async (req: Request, res: Response) => {
+  apiRouter.post('/simulate-data', async (req: Request, res: Response) => {
     // La simulación de datos ha sido deshabilitada para usar solo datos reales del broker MQTT
     return res.status(403).json({ 
       success: false, 
@@ -627,6 +654,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
+  app.use('/api', apiRouter);
+
   // Initialize the MQTT client
   await mqttClient.loadAndConnect();
   

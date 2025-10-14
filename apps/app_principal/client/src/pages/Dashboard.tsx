@@ -3,15 +3,40 @@ import { getPetsByHouseholdId, getConsumptionEventsByDeviceId } from '@/services
 import type { Pet, ConsumptionEvent } from '@/services/api';
 import PetAvatar from '@/components/PetAvatar';
 import StatWidget from '@/components/StatWidget';
+import ConsumptionChart from '@/components/ConsumptionChart';
+import DurationChart from '@/components/DurationChart';
+import ActivityChart, { ActivityEvent } from '@/components/ActivityChart';
+import DeviceStatus from '@/components/DeviceStatus';
+
+// Helper function to generate mock data
+const generateMockWaterData = (baseEvents: ConsumptionEvent[]): ConsumptionEvent[] => {
+  return baseEvents.map(event => ({
+    ...event,
+    amountGrams: Math.floor(Math.random() * 50) + 20, // Random water consumption in ml
+  }));
+};
+
+const generateMockActivityData = (): ActivityEvent[] => {
+  const data: ActivityEvent[] = [];
+  const now = new Date();
+  for (let i = 24; i >= 0; i--) {
+    const timestamp = new Date(now.getTime() - i * 60 * 60 * 1000).toISOString();
+    const level = Math.floor(Math.random() * 3); // 0, 1, or 2
+    data.push({ timestamp, level });
+  }
+  return data;
+};
+
 
 export default function Dashboard() {
   const [pets, setPets] = useState<Pet[]>([]);
-  const [events, setEvents] = useState<ConsumptionEvent[]>([]);
+  const [foodEvents, setFoodEvents] = useState<ConsumptionEvent[]>([]);
+  const [waterEvents, setWaterEvents] = useState<ConsumptionEvent[]>([]);
+  const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const FAKE_HOUSEHOLD_ID = 1;
-    // In a real app, we'd get the device IDs from the user's devices
     const FAKE_DEVICE_ID_COMEDERO = 1; 
 
     const fetchData = async () => {
@@ -20,9 +45,12 @@ export default function Dashboard() {
         const petsData = await getPetsByHouseholdId(FAKE_HOUSEHOLD_ID);
         setPets(petsData);
 
-        // Fetch events for a specific device to show some stats
-        const eventsData = await getConsumptionEventsByDeviceId(FAKE_DEVICE_ID_COMEDERO);
-        setEvents(eventsData);
+        const foodEventsData = await getConsumptionEventsByDeviceId(FAKE_DEVICE_ID_COMEDERO);
+        setFoodEvents(foodEventsData);
+        
+        // Generate mock data for other charts based on the fetched data or new logic
+        setWaterEvents(generateMockWaterData(foodEventsData));
+        setActivityEvents(generateMockActivityData());
 
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -34,8 +62,21 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  // Calculate a simple statistic from the mock data
-  const totalConsumption = events.reduce((sum, event) => sum + event.amountGrams, 0);
+  const totalFoodConsumption = foodEvents.reduce((sum, event) => sum + event.amountGrams, 0);
+  const totalWaterConsumption = waterEvents.reduce((sum, event) => sum + event.amountGrams, 0);
+
+  // Find the latest timestamp from each event type
+  const findLatestTimestamp = (events: { timestamp: string }[]) => {
+    if (events.length === 0) return undefined;
+    return events.reduce((latest, event) => {
+      const eventTime = new Date(event.timestamp).getTime();
+      return eventTime > latest ? eventTime : latest;
+    }, 0);
+  };
+
+  const lastFoodEventTime = findLatestTimestamp(foodEvents);
+  const lastWaterEventTime = findLatestTimestamp(waterEvents);
+  const lastActivityEventTime = findLatestTimestamp(activityEvents);
 
   return (
     <div>
@@ -60,31 +101,45 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Statistics Section */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Resumen de Hoy</h2>
+          {/* Device Status Section */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Mis Dispositivos</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <StatWidget 
-                icon="restaurant"
-                label="Consumo Comedero"
-                value={totalConsumption.toFixed(0)}
-                unit="gramos"
-                color="#FF847C"
+              <DeviceStatus 
+                name="Comedero Principal" 
+                status="Encendido" 
+                lastConnection={lastFoodEventTime ? new Date(lastFoodEventTime) : undefined}
               />
-              <StatWidget 
-                icon="water_drop"
-                label="Consumo Bebedero"
-                value="75" // Hardcoded mock value
-                unit="ml"
-                color="#99B898"
+              <DeviceStatus 
+                name="Bebedero Automático" 
+                status="Sleep" 
+                lastConnection={lastWaterEventTime ? new Date(lastWaterEventTime) : undefined}
               />
-              <StatWidget 
-                icon="event_note"
-                label="Eventos Registrados"
-                value={events.length.toString()}
-                unit="hoy"
-                color="#EBB7AA"
+              <DeviceStatus 
+                name="Collar de Actividad" 
+                status="Encendido" 
+                lastConnection={lastActivityEventTime ? new Date(lastActivityEventTime) : undefined}
               />
+            </div>
+          </div>
+
+          {/* Charts Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="bg-white p-4 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-2">Consumo de Alimento (g)</h3>
+              <ConsumptionChart data={foodEvents} color="#FF847C" />
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-2">Consumo de Agua (ml)</h3>
+              <ConsumptionChart data={waterEvents} color="#99B898" />
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-2">Duración de Comidas (s)</h3>
+              <DurationChart data={foodEvents} color="#EBB7AA" />
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-2">Nivel de Actividad</h3>
+              <ActivityChart data={activityEvents} />
             </div>
           </div>
         </>

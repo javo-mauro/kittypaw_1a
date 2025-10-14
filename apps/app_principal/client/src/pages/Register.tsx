@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLocation } from "wouter";
-import { registerUserAndHousehold } from '@/services/api';
+// import { registerUserAndHousehold } from '@/services/api';
 import InfoModal from '@/components/ui/InfoModal';
 
 export default function Register() {
@@ -32,7 +32,7 @@ export default function Register() {
 
     setLoading(true);
     try {
-      await registerUserAndHousehold({ name, email });
+      // await registerUserAndHousehold({ name, email });
       setIsModalOpen(true);
     } catch (err) {
       setError("Ocurrió un error durante el registro.");

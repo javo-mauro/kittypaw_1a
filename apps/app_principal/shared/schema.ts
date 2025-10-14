@@ -60,6 +60,16 @@ export const consumptionEvents = pgTable("consumption_events", {
   durationSeconds: integer("duration_seconds").notNull(),
 });
 
+// Nueva tabla para reportes de salud del dispositivo
+export const deviceHealthReports = pgTable("device_health_reports", {
+  id: serial("id").primaryKey(),
+  deviceId: integer("device_id").notNull().references(() => devices.id, { onDelete: 'cascade' }),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  firmwareVersion: text("firmware_version"),
+  report: text("report").notNull(), // Almacenará el JSON completo del reporte
+  overallStatus: text("overall_status").notNull(), // 'PASS' o 'FAIL'
+});
+
 // --- DEFINICIÓN DE RELACIONES ---
 
 export const householdsRelations = relations(households, ({ many }) => ({
@@ -90,6 +100,7 @@ export const devicesRelations = relations(devices, ({ one, many }) => ({
   }),
   consumptionEvents: many(consumptionEvents),
   petsToDevices: many(petsToDevices),
+  healthReports: many(deviceHealthReports),
 }));
 
 export const petsToDevicesRelations = relations(petsToDevices, ({ one }) => ({
@@ -100,6 +111,13 @@ export const petsToDevicesRelations = relations(petsToDevices, ({ one }) => ({
 export const consumptionEventsRelations = relations(consumptionEvents, ({ one }) => ({
   device: one(devices, {
     fields: [consumptionEvents.deviceId],
+    references: [devices.id],
+  }),
+}));
+
+export const deviceHealthReportsRelations = relations(deviceHealthReports, ({ one }) => ({
+  device: one(devices, {
+    fields: [deviceHealthReports.deviceId],
     references: [devices.id],
   }),
 }));

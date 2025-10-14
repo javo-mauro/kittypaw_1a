@@ -1,9 +1,7 @@
 // D:/Escritorio/Proyectos/KittyPaw/Kittypaw_1a/apps/app_principal/client/src/services/api.ts
 
 /**
- * @file Este archivo simula una API real para el frontend de KittyPaw.
- * Proporciona funciones asíncronas que devuelven datos de prueba (mocks)
- * y simula la lógica del backend para el flujo de onboarding v2.0.
+ * @file Este archivo se conecta a la API real del backend de KittyPaw.
  */
 
 // --- Tipos de Datos (basados en el schema.ts v2.1) ---
@@ -47,117 +45,54 @@ export type ConsumptionEvent = {
     durationSeconds: number;
 }
 
-// --- Base de Datos Falsa (Mocks) ---
+// --- Funciones de la API Real ---
 
-let MOCK_HOUSEHOLDS: Household[] = [
-    { id: 1, name: "Casa de Mauro" }
-];
-let MOCK_USERS: User[] = [
-    { id: 1, householdId: 1, name: 'Mauro', email: 'mauro@kittypaw.com', role: 'owner' }
-];
-let MOCK_DEVICES: Device[] = [
-  { id: 1, householdId: 1, deviceId: 'KP-C01-0001', name: 'Comedero Cocina', mode: 'comedero' },
-  { id: 2, householdId: 1, deviceId: 'KP-B01-0002', name: 'Bebedero Terraza', mode: 'bebedero' },
-];
-let MOCK_PETS: Pet[] = [
-  { id: 1, householdId: 1, name: 'Milo', species: 'Gato', breed: 'Mestizo', birthDate: '2022-05-10', avatarUrl: null },
-  { id: 2, householdId: 1, name: 'Luna', species: 'Gato', breed: 'Siamés', birthDate: '2023-01-15', avatarUrl: null },
-];
-let MOCK_CONSUMPTION_EVENTS: ConsumptionEvent[] = [
-    { id: 1, deviceId: 1, timestamp: new Date(Date.now() - 3 * 3600 * 1000).toISOString(), amountGrams: 50, durationSeconds: 120 },
-    { id: 2, deviceId: 2, timestamp: new Date(Date.now() - 2 * 3600 * 1000).toISOString(), amountGrams: 150, durationSeconds: 60 },
-    { id: 3, deviceId: 1, timestamp: new Date(Date.now() - 1 * 3600 * 1000).toISOString(), amountGrams: 25, durationSeconds: 45 },
-];
-let MOCK_PETS_TO_DEVICES: { petId: number, deviceId: number }[] = [];
+const API_BASE_URL = '/api';
 
-
-// --- Funciones de la API Simulada ---
-
-const simulateDelay = (ms: number) => new Promise(res => setTimeout(res, ms));
+async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(errorData.message || 'Error en la petición a la API');
+    }
+    return response.json();
+  } catch (error) {
+    console.error(`API request failed for endpoint: ${endpoint}`, error);
+    throw error;
+  }
+}
 
 // --- GETTERS ---
-export const getUser = async (userId: number): Promise<User | undefined> => {
-  await simulateDelay(500);
-  const user = MOCK_USERS.find(u => u.id === userId);
-  console.log('API MOCK: Fetched user', user);
-  return user;
-};
 
 export const getDevicesByHouseholdId = async (householdId: number): Promise<Device[]> => {
-  await simulateDelay(800);
-  const devices = MOCK_DEVICES.filter(d => d.householdId === householdId);
-  console.log(`API MOCK: Fetched ${devices.length} devices for householdId ${householdId}`);
-  return devices;
+  // El backend no tiene un endpoint directo, traemos todos y filtramos.
+  // Esto no es óptimo y debería mejorarse en el backend en el futuro.
+  const allDevices = await apiRequest<Device[]>('/devices');
+  return allDevices.filter(d => d.householdId === householdId);
 };
 
 export const getPetsByHouseholdId = async (householdId: number): Promise<Pet[]> => {
-  await simulateDelay(700);
-  const pets = MOCK_PETS.filter(p => p.householdId === householdId);
-  console.log(`API MOCK: Fetched ${pets.length} pets for householdId ${householdId}`);
-  return pets;
+  // El backend no tiene un endpoint directo, traemos todas y filtramos.
+  // Esto no es óptimo y debería mejorarse en el backend en el futuro.
+  const allPets = await apiRequest<Pet[]>('/pets');
+  return allPets.filter(p => p.householdId === householdId);
 };
 
 export const getConsumptionEventsByDeviceId = async (deviceId: number): Promise<ConsumptionEvent[]> => {
-    await simulateDelay(1000);
-    const events = MOCK_CONSUMPTION_EVENTS.filter(e => e.deviceId === deviceId);
-    console.log(`API MOCK: Fetched ${events.length} events for deviceId ${deviceId}`);
-    return events;
+    // NOTA: El backend usa el endpoint 'sensor-data' para los eventos de consumo.
+    // También, la estructura de datos puede ser diferente. Asumimos que es compatible por ahora.
+    return apiRequest<ConsumptionEvent[]>(`/sensor-data/${deviceId}`);
 }
 
-// --- SETTERS (Nuevas funciones para el Onboarding) ---
-
-export const registerUserAndHousehold = async (userData: {name: string, email: string}): Promise<User> => {
-    await simulateDelay(1200);
-    const newHouseholdId = MOCK_HOUSEHOLDS.length + 1;
-    const newHousehold: Household = { id: newHouseholdId, name: `Hogar de ${userData.name}`};
-    MOCK_HOUSEHOLDS.push(newHousehold);
-
-    const newUserId = MOCK_USERS.length + 1;
-    const newUser: User = { 
-        id: newUserId, 
-        householdId: newHouseholdId, 
-        name: userData.name, 
-        email: userData.email, 
-        role: 'owner' 
-    };
-    MOCK_USERS.push(newUser);
-    
-    console.log('API MOCK: Registered new user and household', { newUser, newHousehold });
-    return newUser;
-};
-
-export const createPet = async (petData: Omit<Pet, 'id' | 'householdId'>, householdId: number): Promise<Pet> => {
-    await simulateDelay(600);
-    const newPetId = MOCK_PETS.length + 1;
-    const createdPet: Pet = { ...petData, id: newPetId, householdId };
-    MOCK_PETS.push(createdPet);
-    console.log('API MOCK: Added new pet', createdPet);
-    return createdPet;
-};
-
-export const linkDevice = async (scannedId: string, name: string, householdId: number): Promise<Device> => {
-    await simulateDelay(900);
-    const newDeviceId = MOCK_DEVICES.length + 1;
-    const newDevice: Device = {
-        id: newDeviceId,
-        householdId,
-        deviceId: scannedId,
-        name,
-        mode: scannedId.includes('KP-C') ? 'comedero' : 'bebedero' // Simple logic based on fake ID
-    };
-    MOCK_DEVICES.push(newDevice);
-    console.log('API MOCK: Linked new device', newDevice);
-    return newDevice;
-};
-
-export const associatePetToDevice = async (deviceId: number, petIds: number[]): Promise<void> => {
-    await simulateDelay(400);
-    // Remove old associations for this device
-    MOCK_PETS_TO_DEVICES = MOCK_PETS_TO_DEVICES.filter(assoc => assoc.deviceId !== deviceId);
-    // Add new ones
-    petIds.forEach(petId => {
-        MOCK_PETS_TO_DEVICES.push({ petId, deviceId });
+// Aquí se podrían añadir el resto de funciones (POST, PUT, DELETE) para interactuar con la API real.
+// Por ejemplo:
+/*
+export const createPet = async (petData: Omit<Pet, 'id'>): Promise<Pet> => {
+    return apiRequest<Pet>('/pets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(petData),
     });
-    console.log('API MOCK: Associated pets to device', MOCK_PETS_TO_DEVICES);
-    return;
 };
+*/

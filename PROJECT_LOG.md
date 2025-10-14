@@ -14,6 +14,8 @@ Este documento es un registro cronológico de todas las sesiones de trabajo, ava
 
 ### SESIÓN INICIADA - Mauro - 2025-10-08 18:31:05
 
+### SESIÓN INICIADA - Mauro - 2025-10-08 20:22:28
+
 ### SESIÓN INICIADA - Mauro - 2025-10-08 21:30:00
 - **Avance Técnico:** Se completaron las Sesiones 1 y 2 del plan de trabajo. Se construyó la fundación del frontend de la aplicación principal, incluyendo:
     - Creación de una capa de servicios (`api.ts`) con datos de prueba (mocks).
@@ -38,6 +40,8 @@ Este documento es un registro cronológico de todas las sesiones de trabajo, ava
 - **Avance Estratégico:** Se define y documenta la arquitectura de datos v2.1, introduciendo el concepto de "Hogares" (`households`) para soportar múltiples usuarios y la asociación de mascotas a dispositivos. Se actualizan todos los documentos de planificación (`DISEÑO_BASE_DE_DATOS.md`, `PLAN_DE_TRABAJO_MAURO.md`, `PROJECT_LOG.md`, `TASK_BOARD.md`) para reflejar esta nueva arquitectura y el plan de desarrollo detallado.
 - **Próximo Paso:** Iniciar la Nueva Sesión 3: Actualizar el `schema.ts` a la v2.1.
 
+### SESIÓN INICIADA - Mauro - 2025-10-08 23:25:37
+
 ### SESIÓN INICIADA - Mauro - 2025-10-08 23:30:00
 - **Avance Técnico:** Se completó la tarea de la Nueva Sesión 3. El archivo `apps/app_principal/shared/schema.ts` ha sido reescrito para implementar la arquitectura de datos v2.1, que incluye "Hogares", roles de usuario, y la relación muchos-a-muchos entre mascotas y dispositivos.
 - **Próximo Paso:** Iniciar la Nueva Sesión 4: UI del Flujo de Onboarding.
@@ -50,6 +54,16 @@ Este documento es un registro cronológico de todas las sesiones de trabajo, ava
 - **Avance Estratégico:** Se actualiza la documentación para reflejar el plan de desarrollo v4, que detalla la implementación de la "Ficha Integral de la Mascota" y la arquitectura de datos v2.2. Se actualizan `DISEÑO_BASE_DE_DATOS.md` y `PLAN_DE_TRABAJO_MAURO.md`.
 - **Próximo Paso:** Actualizar `TASK_BOARD.md` y hacer commit.
 
-### SESIÓN INICIADA - Mauro - 2025-10-08 20:22:28
+### SESIÓN INICIADA - Mauro - 2025-10-13 23:50:00
+- **Avance Técnico (Full-Stack):** Se diseñó e implementó la funcionalidad completa de "Auto-Diagnóstico en Arranque (POST)" para los dispositivos IoT.
+    - **Backend:** Se actualizó el `schema.ts` para incluir la tabla `device_health_reports`. Se creó un nuevo servicio `mqtt.ts` que escucha en el tópico `kittypaw/reports/health` y guarda los reportes en la base de datos.
+    - **Firmware:** Se creó la especificación `AUTO_DIAGNOSTICO_POST.md`. Se implementó el esqueleto del nuevo módulo `SelfTestManager` (`.h` y `.cpp`) y se integró en el `main.cpp` para que se ejecute en cada arranque.
+    - **DevOps:** Se corrigieron problemas críticos en la configuración de Docker. Se creó un archivo `.env` para las variables de entorno, se ajustó `docker-compose.yml` para la conexión a la base de datos y se añadió un `.dockerignore` para optimizar drásticamente los tiempos de construcción de la imagen.
+- **Avance Estratégico:** Se actualizó la documentación clave (`TASK_BOARD.md`, `MANUAL_DE_MAURO_PARA_JAVO.md`, `Indicaciones Gemini IOT.md`) para reflejar la nueva funcionalidad y los procedimientos corregidos. Se asignó formalmente a Javier la tarea de completar la lógica del `SelfTestManager`.
 
-### SESIÓN INICIADA - Mauro - 2025-10-08 23:25:37
+### SESIÓN FINALIZADA - Mauro - 2025-10-14 01:05:00
+- **Avance Técnico (DevOps):** Se diagnosticó y solucionó un error de compilación en el `Dockerfile` que ocurría durante el paso `npm run build`. El problema se debía a una invocación incorrecta de `esbuild` para el código del servidor.
+    - Se creó un script de configuración `esbuild.config.mjs` para definir explícitamente el proceso de build del backend.
+    - Se actualizó el `package.json` para usar este nuevo script, resolviendo el error `Unexpected "export"`.
+- **Avance Estratégico:** Se actualizó la documentación del proyecto (`PROJECT_LOG.md`, `MANUAL_DE_MAURO_PARA_JAVO.md`) para reflejar la solución y las mejores prácticas para el entorno de Docker.
+- **Próximo Paso:** Retomar las tareas de desarrollo del frontend según el `PLAN_DE_TRABAJO_MAURO.md`.

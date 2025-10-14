@@ -1,14 +1,32 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    env_file:
+      - ./.env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   app:
     build:
       context: .
-      dockerfile: ./apps/app_principal/Dockerfile
+      # Usamos el nuevo Dockerfile optimizado en la raíz
+      dockerfile: Dockerfile
     ports:
-      - "5000:5000"
+      - "3000:3000"
+    env_file:
+      - ./.env
     environment:
+      # Asegura que el backend pueda encontrar la base de datos
       - DATABASE_URL=${DATABASE_URL}
-    # La sección de 'volumes' se ha eliminado para asegurar que el contenedor se ejecute
-    # con los archivos y dependencias con los que fue construido, evitando conflictos.
-    command: npm run dev --workspace=app_principal
+    depends_on:
+      - db
+    # El comando ahora ejecuta la versión de producción pre-construida
+    command: npm start --workspace=app_principal
+
+volumes:
+  postgres_data:

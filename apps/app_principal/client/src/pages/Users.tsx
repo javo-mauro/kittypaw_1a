@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -6,51 +6,31 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 // Removido: import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Search, User } from "lucide-react";
+import { Loader2, Search, User as UserIcon, HardDrive, BarChart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
-
-interface User {
-  id: number;
-  username: string;
-  name: string | null;
-  role: string | null;
-  lastLogin: string | null;
-}
-
-// Eliminamos las interfaces que ya no usamos
-
-interface Device {
-  id: number;
-  deviceId: string;
-  name: string;
-  type: string;
-  status: string | null;
-  batteryLevel: number | null;
-  lastUpdate: string | null;
-}
-
-interface SensorData {
-  id: number;
-  deviceId: string;
-  sensorType: string;
-  value: number;
-  unit: string;
-  timestamp: string;
-}
+// Mejora: Importar tipos desde el paquete compartido para mantener la consistencia.
+import type { User, Device, ConsumptionEvent } from "@shared/schema";
 
 export default function Users() {
   const { toast } = useToast();
+  const { switchUser } = useAuth();
+
+  // --- Estados del Componente ---
   const [users, setUsers] = useState<User[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [sensorData, setSensorData] = useState<SensorData[]>([]);
-  const [selectedItem, setSelectedItem] = useState<"user" | "device" | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  
+  // Mejora: Estados más explícitos para la selección.
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
+
+  // --- Estados de Datos ---
+  const [devices, setDevices] = useState<Device[]>([]);
+  // Mejora: Usamos ConsumptionEvent que es más específico y probablemente lo que devuelve la API.
+  const [sensorData, setSensorData] = useState<ConsumptionEvent[]>([]);
 
   // Cargar usuarios
   useEffect(() => {
@@ -59,8 +39,7 @@ export default function Users() {
         setLoading(true);
         // Obtenemos la lista de usuarios del sistema
         const fetchedUsers = await apiRequest<User[]>("/api/users");
-        setUsers(fetchedUsers);
-        setFilteredUsers(fetchedUsers);
+        setUsers(fetchedUsers); // Solo actualizamos la lista maestra
       } catch (error) {
         console.error("Error al obtener usuarios:", error);
         toast({
@@ -76,29 +55,26 @@ export default function Users() {
     fetchUsers();
   }, [toast]);
 
-  // Filtrar usuarios basados en el término de búsqueda
-  useEffect(() => {
-    if (searchTerm) {
-      const lowerSearchTerm = searchTerm.toLowerCase();
-      
-      // Filtrar usuarios del sistema
-      const filtered = users.filter(
-        (user) =>
-          user.username.toLowerCase().includes(lowerSearchTerm) ||
-          (user.name && user.name.toLowerCase().includes(lowerSearchTerm))
-      );
-      setFilteredUsers(filtered);
-    } else {
-      setFilteredUsers(users);
+  // Mejora: Usar useMemo para optimizar el filtrado de usuarios.
+  // Se recalcula solo cuando `searchTerm` o `users` cambian.
+  const filteredUsers = useMemo(() => {
+    if (!searchTerm) {
+      return users;
     }
+      const lowerSearchTerm = searchTerm.toLowerCase();
+    return users.filter(
+      (user) =>
+        user.username.toLowerCase().includes(lowerSearchTerm) ||
+        (user.name && user.name.toLowerCase().includes(lowerSearchTerm))
+    );
   }, [searchTerm, users]);
-
-  // Eliminamos la función de obtener mascotas por usuario, ya no la usamos
 
   // Función para obtener los dispositivos asociados a un usuario
   const fetchUserDevices = async (username: string) => {
     try {
       setDetailsLoading(true);
+      setDevices([]); // Limpiar dispositivos anteriores
+      setSensorData([]); // Limpiar datos de sensores
       // Usamos el parámetro de consulta para filtrar los dispositivos por usuario
       const fetchedDevices = await apiRequest<Device[]>(`/api/devices?username=${username}`);
       setDevices(fetchedDevices);
@@ -123,8 +99,9 @@ export default function Users() {
   // Función para obtener los datos de sensores de un dispositivo
   const fetchDeviceSensorData = async (deviceId: string) => {
     try {
+      setSensorData([]); // Limpiar datos anteriores
       setDetailsLoading(true);
-      const data = await apiRequest<SensorData[]>(`/api/sensor-data/${deviceId}`);
+      const data = await apiRequest<ConsumptionEvent[]>(`/api/sensor-data/${deviceId}`);
       setSensorData(data);
       return data;
     } catch (error) {
@@ -141,7 +118,6 @@ export default function Users() {
   };
 
   // Función para cambiar al usuario seleccionado usando el contexto de autenticación
-  const { switchUser } = useAuth();
   const handleSwitchUser = async (username: string) => {
     try {
       const success = await switchUser(username);
@@ -165,15 +141,17 @@ export default function Users() {
 
   // Manejar selección de usuario
   const handleUserSelect = async (user: User) => {
+    if (selectedUser?.id === user.id) return; // No recargar si ya está seleccionado
     setSelectedUser(user);
-    setSelectedItem("user");
+    setSelectedDevice(null); // Deseleccionar cualquier dispositivo
     await fetchUserDevices(user.username);
   };
 
   // Manejar selección de dispositivo
-  const handleDeviceSelect = async (device: Device) => {
-    setSelectedItem("device");
-    await fetchDeviceSensorData(device.deviceId);
+  const handleDeviceSelect = (device: Device) => {
+    if (selectedDevice?.id === device.id) return; // No recargar si ya está seleccionado
+    setSelectedDevice(device);
+    fetchDeviceSensorData(device.deviceId);
   };
 
   // Renderizar detalles del usuario
@@ -184,8 +162,8 @@ export default function Users() {
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <div>
-            <h3 className="text-xl font-bold">{selectedUser.name || selectedUser.username}</h3>
-            <p className="text-sm text-gray-500">Rol: {selectedUser.role || "No especificado"}</p>
+            <h3 className="text-xl font-bold flex items-center gap-2"><UserIcon className="h-5 w-5" /> {selectedUser.name || selectedUser.username}</h3>
+            <p className="text-sm text-gray-500 ml-7">Rol: {selectedUser.role || "No especificado"}</p>
             <p className="text-sm text-gray-500">
               Último acceso: {selectedUser.lastLogin ? new Date(selectedUser.lastLogin).toLocaleString() : "Nunca"}
             </p>
@@ -196,14 +174,9 @@ export default function Users() {
         </div>
 
         <div className="space-y-2">
-          <h4 className="text-lg font-semibold">Dispositivos asociados</h4>
-          {detailsLoading ? (
-            <div className="flex justify-center p-4">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-            </div>
-          ) : devices.length > 0 ? (
+          <h4 className="text-lg font-semibold flex items-center gap-2"><HardDrive className="h-5 w-5" /> Dispositivos asociados</h4>
+          {devices.length > 0 ? (
             <div className="border rounded-md">
-              <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>ID</TableHead>
@@ -214,12 +187,13 @@ export default function Users() {
                     <TableHead>Última actualización</TableHead>
                   </TableRow>
                 </TableHeader>
+              <Table>
                 <TableBody>
                   {devices.map((device) => (
                     <TableRow 
                       key={device.id}
-                      className="cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleDeviceSelect(device)}
+                      className={`cursor-pointer hover:bg-gray-100/80 ${selectedDevice?.id === device.id ? "bg-gray-100" : ""}`}
+                      onClick={() => handleDeviceSelect(device)} // Simplificado
                     >
                       <TableCell>{device.deviceId}</TableCell>
                       <TableCell>{device.name}</TableCell>
@@ -238,26 +212,53 @@ export default function Users() {
                 </TableBody>
               </Table>
             </div>
+          ) : detailsLoading && !selectedDevice ? (
+            <div className="flex justify-center items-center p-4 border rounded-md h-24">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+              <span className="ml-2">Cargando dispositivos...</span>
+            </div>
           ) : (
             <p className="text-center text-gray-500 py-4">No hay dispositivos asociados a este usuario.</p>
           )}
         </div>
 
-        {selectedItem === "device" && sensorData.length > 0 && (
+        {selectedDevice && (
           <div className="space-y-2">
-            <h4 className="text-lg font-semibold">Datos del sensor</h4>
-            <div className="border rounded-md p-4 bg-gray-50">
-              <ScrollArea className="h-60">
-                <pre className="text-xs">{JSON.stringify(sensorData, null, 2)}</pre>
+            <h4 className="text-lg font-semibold flex items-center gap-2"><BarChart className="h-5 w-5" /> Datos de Consumo ({selectedDevice.name})</h4>
+            {detailsLoading && sensorData.length === 0 ? (
+              <div className="flex justify-center items-center p-4 border rounded-md h-40">
+                <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+                <span className="ml-2">Cargando datos del sensor...</span>
+              </div>
+            ) : sensorData.length > 0 ? (
+              <ScrollArea className="h-60 border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead className="text-right">Cantidad (g)</TableHead>
+                      <TableHead className="text-right">Duración (s)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sensorData.map((event) => (
+                      <TableRow key={event.id}>
+                        <TableCell>{new Date(event.timestamp).toLocaleString()}</TableCell>
+                        <TableCell className="text-right">{event.amountGrams.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">{event.durationSeconds}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </ScrollArea>
-            </div>
+            ) : (
+              <p className="text-center text-gray-500 py-4">No hay datos de consumo para este dispositivo.</p>
+            )}
           </div>
         )}
       </div>
     );
   };
-
-  // Ya no necesitamos renderizar detalles adicionales de usuarios
 
   return (
     <div className="container py-8">
@@ -299,11 +300,11 @@ export default function Users() {
                           onClick={() => handleUserSelect(user)}
                           onDoubleClick={() => handleSwitchUser(user.username)}
                         >
-                          <div className="bg-primary/10 h-10 w-10 rounded-full flex items-center justify-center">
-                            <User className="h-5 w-5 text-primary" />
+                          <div className="bg-primary/10 h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0">
+                            <UserIcon className="h-5 w-5 text-primary" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{user.name || user.username}</p>
+                            <p className="text-sm font-medium truncate">{user.name ?? user.username}</p>
                             <p className="text-xs text-gray-500 truncate">@{user.username}</p>
                           </div>
                           <Badge variant="outline" className="text-xs">
@@ -337,7 +338,7 @@ export default function Users() {
                 ? renderUserDetails() 
                 : (
                   <div className="h-72 flex flex-col items-center justify-center text-center p-8 text-gray-500">
-                    <User className="h-16 w-16 mb-4 opacity-20" />
+                    <UserIcon className="h-16 w-16 mb-4 opacity-20" />
                     <p>Selecciona un usuario de la lista para ver sus detalles.</p>
                     <p className="text-sm mt-2">Puedes hacer doble clic en un usuario para cambiar a su cuenta.</p>
                   </div>

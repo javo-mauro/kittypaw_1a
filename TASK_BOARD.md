@@ -16,6 +16,7 @@ Este documento es el tablero de control de tareas activas. Reemplaza al Roadmap 
 
 *   `[Firmware]` Configurar el proyecto en PlatformIO con las librerías necesarias. **[Owner: Javier]**
 *   `[Firmware]` Implementar la clase `WiFiManager` para la conexión. **[Owner: Javier]**
+*   `[Firmware]` Implementar la lógica de pruebas en `SelfTestManager` para el auto-diagnóstico. **[Owner: Javier]**
 
 ---
 
@@ -30,3 +31,4 @@ Este documento es el tablero de control de tareas activas. Reemplaza al Roadmap 
 *   `[Gestión]` Fase de Planificación y Documentación Estratégica. **[Owner: Ambos]**
 *   `[Frontend]` Construir la base de la aplicación (UI, componentes y servicios mock).
 *   `[DB]` Implementar arquitectura de datos v2.2 con "Hogares".
+*   `[IoT/Backend]` Implementar sistema de Auto-Diagnóstico (POST) y corregir entorno Docker. **[Owner: Ambos]**

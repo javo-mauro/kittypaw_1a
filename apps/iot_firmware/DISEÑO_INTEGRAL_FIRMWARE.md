@@ -30,6 +30,7 @@ Cada módulo se diseñará como una clase de C++ con una única responsabilidad,
 *   **Propósito:** Encapsula toda la lógica del sensor de peso (HX711) y la detección de eventos de consumo.
 *   **Ubicación:** `lib/ScaleManager/`
 *   **Interfaz (`ScaleManager.h`):**
+*   **Estado:** Implementado
     ```cpp
     #pragma once
     #include <Arduino.h>
@@ -56,6 +57,7 @@ Cada módulo se diseñará como una clase de C++ con una única responsabilidad,
 *   **Propósito:** Gestiona la configuración y el estado global del dispositivo (ID, modo de operación).
 *   **Ubicación:** `lib/DeviceManager/`
 *   **Interfaz (`DeviceManager.h`):
+*   **Estado:** Implementado
     ```cpp
     #pragma once
     #include <Arduino.h>
@@ -82,6 +84,7 @@ Cada módulo se diseñará como una clase de C++ con una única responsabilidad,
 *   **Propósito:** Gestiona la conexión a la red WiFi de forma no bloqueante.
 *   **Ubicación:** `lib/WiFiManager/`
 *   **Interfaz (`WiFiManager.h`):
+*   **Estado:** Implementado
     ```cpp
     #pragma once
     #include <Arduino.h>
@@ -104,6 +107,7 @@ Cada módulo se diseñará como una clase de C++ con una única responsabilidad,
 *   **Propósito:** Gestiona la comunicación con el broker MQTT (conexión, publicación, suscripción).
 *   **Ubicación:** `lib/MqttManager/`
 *   **Interfaz (`MqttManager.h`):
+*   **Estado:** Implementado
     ```cpp
     #pragma once
     #include <Arduino.h>

@@ -63,6 +63,12 @@ Esta es la mejor parte. Una vez que Docker Desktop esté corriendo, solo necesit
 
 ### Comandos Útiles de Docker
 
+*   **Para construir y correr (la primera vez o cuando hay cambios en `Dockerfile`):**
+    ```bash
+    docker-compose up --build
+    ```
+    > **Nota:** Gracias al archivo `.dockerignore` que hemos añadido, este proceso será mucho más rápido después de la primera ejecución, ya que no intentará copiar archivos innecesarios como `node_modules`.
+
 *   **Para detener todo:**
     ```bash
     docker-compose down
@@ -176,6 +182,34 @@ Para cada tarea que tomes del `TASK_BOARD.md`, el proceso es el siguiente:
 7.  **Merge:** Una vez que el PR es aprobado, se fusiona (merge) con la rama `main`. ¡Y listo! Tu código ya es parte oficial del proyecto.
 
 Este proceso protege nuestra rama principal y nos permite a ambos revisar el trabajo del otro antes de integrarlo.
+
+---
+
+## Parte 8: Tu Próxima Misión - Auto-Diagnóstico del Dispositivo
+
+Javo, hemos definido una nueva funcionalidad clave para el firmware: un **Sistema de Auto-Diagnóstico en Arranque (POST)**.
+
+**El Objetivo:**
+Cada vez que un dispositivo se encienda, debe realizar una serie de pruebas internas para verificar que sus componentes (sensores, memoria, WiFi) funcionan correctamente. Luego, debe enviar un reporte de "salud" al backend. Esto nos permitirá saber si algún dispositivo en campo está fallando.
+
+**Tu Tarea:**
+He creado el esqueleto del módulo que se encargará de esto. Tu misión es implementar la lógica de las pruebas.
+
+1.  **Nuevos Archivos Creados para Ti:**
+    *   `apps/iot_firmware/lib/SelfTestManager/SelfTestManager.h`
+    *   `apps/iot_firmware/lib/SelfTestManager/SelfTestManager.cpp`
+
+2.  **Documento de Especificaciones:**
+    Toda la información sobre qué pruebas realizar y el formato del reporte está en:
+    `docs/tech/Firmware_Features/AUTO_DIAGNOSTICO_POST.md`. ¡Léelo con atención!
+
+3.  **¿Qué tienes que hacer?**
+    En `SelfTestManager.cpp`, verás varias funciones de prueba vacías (ej. `_testFilesystem()`, `_testSensorHx711()`). Debes rellenarlas con el código que realice la comprobación descrita en el documento de especificaciones.
+
+4.  **El Backend está Listo:**
+    Ya he modificado el backend (`mqtt.ts`) para que escuche en el tópico `kittypaw/reports/health` y guarde estos reportes en la base de datos. Una vez que implementes el firmware, el sistema funcionará de punta a punta.
+
+Esta es una funcionalidad muy importante para la robustez del producto. ¡Con esto, el firmware dará un gran salto de calidad!
 
 ---
 

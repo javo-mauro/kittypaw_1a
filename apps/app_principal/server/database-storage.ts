@@ -1,24 +1,18 @@
 import {
   users,
   devices,
-  sensorData,
-  mqttConnections,
-  petOwners,
   pets,
+  consumptionEvents,
   type User,
   type InsertUser,
   type Device,
   type InsertDevice,
-  type SensorData,
-  type InsertSensorData,
-  type MqttConnection,
-  type InsertMqttConnection,
-  type SensorReading,
-  type SystemMetrics,
-  type PetOwner,
-  type InsertPetOwner,
   type Pet,
-  type InsertPet
+  type InsertPet,
+  type ConsumptionEvent,
+  type InsertConsumptionEvent,
+  type SensorReading,
+  type SystemMetrics
 } from "@shared/schema";
 import { db } from './db';
 import { eq, desc, sql, and, isNull, asc } from 'drizzle-orm';
@@ -90,56 +84,44 @@ export class DatabaseStorage implements IStorage {
       .where(eq(devices.deviceId, deviceId));
   }
 
-  // Sensor data operations
-  async getSensorData(deviceId: string, limit = 100): Promise<SensorData[]> {
+  // Consumption events operations
+  async getConsumptionEvents(deviceId: number, limit = 100): Promise<ConsumptionEvent[]> {
     return db.select()
-      .from(sensorData)
-      .where(eq(sensorData.deviceId, deviceId))
-      .orderBy(desc(sensorData.timestamp))
+      .from(consumptionEvents)
+      .where(eq(consumptionEvents.deviceId, deviceId))
+      .orderBy(desc(consumptionEvents.timestamp))
       .limit(limit);
   }
 
-  async getSensorDataByType(deviceId: string, sensorType: string, limit = 100): Promise<SensorData[]> {
-    return db.select()
-      .from(sensorData)
-      .where(and(
-        eq(sensorData.deviceId, deviceId),
-        eq(sensorData.sensorType, sensorType)
-      ))
-      .orderBy(desc(sensorData.timestamp))
-      .limit(limit);
-  }
-
-  async createSensorData(data: InsertSensorData): Promise<SensorData> {
-    const [newData] = await db.insert(sensorData)
+  async createConsumptionEvent(data: InsertConsumptionEvent): Promise<ConsumptionEvent> {
+    const [newEvent] = await db.insert(consumptionEvents)
       .values({
         ...data,
         timestamp: new Date()
       })
       .returning();
-    return newData;
+    return newEvent;
   }
 
   async getLatestReadings(): Promise<SensorReading[]> {
-    // Esta es una consulta más compleja que necesita una subconsulta
+    // This query now gets the latest consumption event for each device.
     const latestReadingsQuery = `
       WITH latest AS (
-        SELECT DISTINCT ON (device_id, sensor_type)
+        SELECT DISTINCT ON (device_id)
           device_id,
-          sensor_type,
-          data,
+          amount_grams,
           timestamp
-        FROM sensor_data
-        ORDER BY device_id, sensor_type, timestamp DESC
+        FROM consumption_events
+        ORDER BY device_id, timestamp DESC
       )
       SELECT 
         l.device_id as "deviceId",
-        l.sensor_type as "sensorType",
-        (l.data ->> 'value')::numeric as "value",
-        l.data ->> 'unit' as "unit",
+        'consumption' as "sensorType",
+        l.amount_grams as "value",
+        'grams' as "unit",
         l.timestamp as "timestamp"
       FROM latest l
-      ORDER BY l.device_id, l.sensor_type
+      ORDER BY l.device_id
     `;
     
     const result = await db.execute(sql.raw(latestReadingsQuery));
@@ -147,37 +129,39 @@ export class DatabaseStorage implements IStorage {
   }
 
   // MQTT connection operations
-  async getMqttConnection(id: number): Promise<MqttConnection | undefined> {
-    const [connection] = await db.select().from(mqttConnections).where(eq(mqttConnections.id, id));
-    return connection;
-  }
-
-  async getMqttConnectionByUserId(userId: number): Promise<MqttConnection | undefined> {
-    const [connection] = await db.select()
-      .from(mqttConnections)
-      .where(eq(mqttConnections.userId, userId));
-    return connection;
-  }
-
-  async createMqttConnection(connection: InsertMqttConnection): Promise<MqttConnection> {
-    const [newConnection] = await db.insert(mqttConnections)
-      .values({
-        ...connection,
-        connected: false,
-        lastConnected: new Date()
-      })
-      .returning();
-    return newConnection;
-  }
-
-  async updateMqttConnectionStatus(id: number, connected: boolean): Promise<void> {
-    await db.update(mqttConnections)
-      .set({ 
-        connected,
-        lastConnected: connected ? new Date() : undefined
-      })
-      .where(eq(mqttConnections.id, id));
-  }
+  // TODO: The mqttConnections table is not part of the current schema.
+  // These methods need to be reviewed and reimplemented if MQTT configuration storage is needed.
+  // async getMqttConnection(id: number): Promise<MqttConnection | undefined> {
+  //   const [connection] = await db.select().from(mqttConnections).where(eq(mqttConnections.id, id));
+  //   return connection;
+  // }
+  //
+  // async getMqttConnectionByUserId(userId: number): Promise<MqttConnection | undefined> {
+  //   const [connection] = await db.select()
+  //     .from(mqttConnections)
+  //     .where(eq(mqttConnections.userId, userId));
+  //   return connection;
+  // }
+  //
+  // async createMqttConnection(connection: InsertMqttConnection): Promise<MqttConnection> {
+  //   const [newConnection] = await db.insert(mqttConnections)
+  //     .values({
+  //       ...connection,
+  //       connected: false,
+  //       lastConnected: new Date()
+  //     })
+  //     .returning();
+  //   return newConnection;
+  // }
+  //
+  // async updateMqttConnectionStatus(id: number, connected: boolean): Promise<void> {
+  //   await db.update(mqttConnections)
+  //     .set({ 
+  //       connected,
+  //       lastConnected: connected ? new Date() : undefined
+  //     })
+  //     .where(eq(mqttConnections.id, id));
+  // }
 
   // System operations
   async getSystemMetrics(): Promise<SystemMetrics> {
@@ -188,10 +172,10 @@ export class DatabaseStorage implements IStorage {
     .from(devices)
     .where(eq(devices.status, 'online'));
     
-    // Contar sensores activos (distintos sensores en los últimos 15 minutos)
+    // Contar dispositivos que han enviado datos en los últimos 15 minutos
     const activeSensorsQuery = `
-      SELECT COUNT(DISTINCT sensor_type) as count
-      FROM sensor_data
+      SELECT COUNT(DISTINCT device_id) as count
+      FROM consumption_events
       WHERE timestamp > NOW() - INTERVAL '15 minutes'
     `;
     const activeSensorsResult = await db.execute(sql.raw(activeSensorsQuery));
@@ -208,65 +192,26 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Pet owner operations
-  async getPetOwners(): Promise<PetOwner[]> {
-    return db.select().from(petOwners);
-  }
-  
-  async getPetOwner(id: number): Promise<PetOwner | undefined> {
-    const [owner] = await db.select().from(petOwners).where(eq(petOwners.id, id));
-    return owner;
-  }
-  
-  async getPetOwnerByEmail(email: string): Promise<PetOwner | undefined> {
-    const [owner] = await db.select().from(petOwners).where(eq(petOwners.email, email));
-    return owner;
-  }
-  
-  async getPetOwnerByUsername(username: string): Promise<PetOwner | undefined> {
-    const [owner] = await db.select().from(petOwners).where(eq(petOwners.username, username));
-    return owner;
-  }
-  
-  async createPetOwner(owner: InsertPetOwner): Promise<PetOwner> {
-    const now = new Date();
-    const [newOwner] = await db.insert(petOwners)
-      .values({
-        ...owner,
-        createdAt: now,
-        updatedAt: now
-      })
-      .returning();
-    return newOwner;
-  }
-  
-  async updatePetOwner(id: number, owner: Partial<InsertPetOwner>): Promise<PetOwner> {
-    const [updatedOwner] = await db.update(petOwners)
-      .set({
-        ...owner,
-        updatedAt: new Date()
-      })
-      .where(eq(petOwners.id, id))
-      .returning();
-    return updatedOwner;
-  }
-  
-  async deletePetOwner(id: number): Promise<boolean> {
-    const result = await db.delete(petOwners)
-      .where(eq(petOwners.id, id))
-      .returning({ id: petOwners.id });
-    return result.length > 0;
-  }
+  // TODO: All pet owner operations have been removed as they are part of a legacy schema.
+  // These should be reimplemented based on the 'users' and 'households' schema if needed.
   
   // Pet operations
   async getPets(): Promise<Pet[]> {
     return db.select().from(pets);
   }
-  
-  async getPetsByOwnerId(ownerId: number): Promise<Pet[]> {
+
+  async getPetsByHouseholdId(householdId: number): Promise<Pet[]> {
     return db.select()
       .from(pets)
-      .where(eq(pets.ownerId, ownerId));
+      .where(eq(pets.householdId, householdId));
   }
+  
+  // This function is deprecated as pets are now related to households, not owners directly.
+  // async getPetsByOwnerId(ownerId: number): Promise<Pet[]> {
+  //   return db.select()
+  //     .from(pets)
+  //     .where(eq(pets.ownerId, ownerId));
+  // }
   
   async getPet(id: number): Promise<Pet | undefined> {
     const [pet] = await db.select().from(pets).where(eq(pets.id, id));
@@ -308,10 +253,11 @@ export class DatabaseStorage implements IStorage {
     return result.length > 0;
   }
   
-  async getPetByKittyPawDeviceId(deviceId: string): Promise<Pet | undefined> {
-    const [pet] = await db.select()
-      .from(pets)
-      .where(eq(pets.kittyPawDeviceId, deviceId));
-    return pet;
-  }
+  // This function is deprecated as the relationship is now managed by the petsToDevices table.
+  // async getPetByKittyPawDeviceId(deviceId: string): Promise<Pet | undefined> {
+  //   const [pet] = await db.select()
+  //     .from(pets)
+  //     .where(eq(pets.kittyPawDeviceId, deviceId));
+  //   return pet;
+  // }
 }

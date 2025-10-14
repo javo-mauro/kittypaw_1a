@@ -1,0 +1,15 @@
+# Dependencies
+/node_modules
+
+# Compiled TypeScript files
+/dist
+
+# Log files
+*.log
+
+# Environment variables file
+.env
+
+# OS-specific
+.DS_Store
+Thumbs.db
