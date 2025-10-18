@@ -140,6 +140,49 @@ export class DatabaseStorage implements IStorage {
     return result as SensorReading[];
   }
 
+  async getSensorData(deviceId: string, limit?: number): Promise<SensorReading[]> {
+    const query = db.select({
+        deviceId: consumptionEvents.deviceId,
+        sensorType: sql<string>`'consumption'`,
+        value: consumptionEvents.amountGrams,
+        unit: sql<string>`'grams'`,
+        timestamp: consumptionEvents.timestamp,
+      })
+      .from(consumptionEvents)
+      .where(eq(consumptionEvents.deviceId, parseInt(deviceId)))
+      .orderBy(desc(consumptionEvents.timestamp));
+
+    if (limit) {
+      query.limit(limit);
+    }
+
+    return query as unknown as Promise<SensorReading[]>;
+  }
+
+  async getSensorDataByType(deviceId: string, type: string, limit?: number): Promise<SensorReading[]> {
+    if (type !== 'consumption') {
+      // For now, we only have 'consumption' data from consumptionEvents
+      return [];
+    }
+
+    const query = db.select({
+        deviceId: consumptionEvents.deviceId,
+        sensorType: sql<string>`'consumption'`,
+        value: consumptionEvents.amountGrams,
+        unit: sql<string>`'grams'`,
+        timestamp: consumptionEvents.timestamp,
+      })
+      .from(consumptionEvents)
+      .where(eq(consumptionEvents.deviceId, parseInt(deviceId)))
+      .orderBy(desc(consumptionEvents.timestamp));
+
+    if (limit) {
+      query.limit(limit);
+    }
+
+    return query as unknown as Promise<SensorReading[]>;
+  }
+
   // MQTT connection operations
   async getMqttConnection(id: number): Promise<MqttConnection | undefined> {
     const [connection] = await db.select().from(mqttConnections).where(eq(mqttConnections.id, id));
@@ -197,9 +240,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
   
-  // Pet owner operations
-  // TODO: All pet owner operations have been removed as they are part of a legacy schema.
-  // These should be reimplemented based on the 'users' and 'households' schema if needed.
+
   
   // Pet operations
   async getPets(): Promise<Pet[]> {
@@ -212,12 +253,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(pets.householdId, householdId));
   }
   
-  // This function is deprecated as pets are now related to households, not owners directly.
-  // async getPetsByOwnerId(ownerId: number): Promise<Pet[]> {
-  //   return db.select()
-  //     .from(pets)
-  //     .where(eq(pets.ownerId, ownerId));
-  // }
+
   
   async getPet(id: number): Promise<Pet | undefined> {
     const [pet] = await db.select().from(pets).where(eq(pets.id, id));

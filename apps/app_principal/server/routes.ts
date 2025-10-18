@@ -103,6 +103,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     }
   });
   
+  // TODO: Implement actual session invalidation for production.
   apiRouter.post('/auth/logout', async (req: Request, res: Response) => {
     // En una aplicación real, aquí invalidaríamos la sesión
     res.json({ success: true, message: 'Sesión cerrada exitosamente' });
@@ -111,6 +112,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   apiRouter.get('/user/current', async (req: Request, res: Response) => {
     // En un sistema real, obtendríamos el ID del usuario de la sesión
     // Por ahora, usamos el ID proporcionado en la solicitud, o el usuario 1 por defecto
+    // TODO: Replace hardcoded userId with dynamic user identification from session/authentication for production.
     const userId = parseInt(req.query.userId as string) || 1;
     const user = await storage.getUser(userId);
     
@@ -123,6 +125,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     }
   });
   
+  // TODO: Replace with actual database interaction for production.
   apiRouter.get('/users', async (req: Request, res: Response) => {
     try {
       // Obtener todos los usuarios del sistema desde el storage
@@ -164,6 +167,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
           };
           await storage.createDevice(device);
           
+          /*
           // Generar algunos datos de sensores para este dispositivo
           const sensorTypes = ['temperature', 'humidity', 'activity', 'weight'];
           const now = new Date();
@@ -201,6 +205,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
               });
             }
           }
+          */
         }
 
         let role = 'owner';
@@ -256,24 +261,10 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
       else if (username === 'jdayne' || userId === 2) {
         filteredDevices = allDevices;
       }
-      // Para otros usuarios, filtrar según las mascotas que tengan asociadas
+      // TODO: Refactor device filtering for other users based on household and petsToDevices.
+      // The previous logic using storage.getPetsByOwnerId is obsolete.
       else if (userId) {
-        // Obtener las mascotas del usuario
-        const ownerPets = await storage.getPetsByOwnerId(userId);
-        
-        // Filtrar dispositivos que estén asociados con las mascotas del propietario
-        if (ownerPets.length > 0) {
-          const petDeviceIds = ownerPets
-            .filter(pet => pet.kittyPawDeviceId)
-            .map(pet => pet.kittyPawDeviceId);
-          
-          filteredDevices = allDevices.filter(device => 
-            petDeviceIds.includes(device.deviceId)
-          );
-        } else {
-          // Si el propietario no tiene mascotas, no mostrar dispositivos
-          filteredDevices = [];
-        }
+        filteredDevices = []; // Placeholder: No devices shown until refactored.
       }
       
       res.json(filteredDevices);
@@ -344,6 +335,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     res.json(metrics);
   });
 
+  // TODO: Replace with actual dynamic system information for production.
   apiRouter.get('/system/info', async (req: Request, res: Response) => {
     res.json({
       version: "v2.1.0",
@@ -353,6 +345,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   });
 
   apiRouter.get('/mqtt/status', async (req: Request, res: Response) => {
+    // TODO: Replace hardcoded userId with dynamic user identification from session/authentication for production.
     const connection = await storage.getMqttConnectionByUserId(1);
     if (connection) {
       // Don't send password or certificate information in the response
@@ -406,78 +399,6 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
       } else {
         res.status(500).json({ message: 'Failed to create MQTT connection' });
       }
-    }
-  });
-
-  // Pet owner endpoints
-  apiRouter.get('/pet-owners', async (req: Request, res: Response) => {
-    try {
-      const owners = await storage.getPetOwners();
-      res.json(owners);
-    } catch (error) {
-      console.error('Error fetching pet owners:', error);
-      res.status(500).json({ message: 'Error al obtener los dueños de mascotas' });
-    }
-  });
-
-  apiRouter.get('/pet-owners/:id', async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      const owner = await storage.getPetOwner(id);
-      
-      if (!owner) {
-        return res.status(404).json({ message: 'Dueño no encontrado' });
-      }
-      
-      res.json(owner);
-    } catch (error) {
-      console.error('Error fetching pet owner:', error);
-      res.status(500).json({ message: 'Error al obtener el dueño de mascota' });
-    }
-  });
-
-  apiRouter.post('/pet-owners', async (req: Request, res: Response) => {
-    try {
-      const owner = req.body;
-      console.log("Datos recibidos del cliente:", owner);
-      const newOwner = await storage.createPetOwner(owner);
-      console.log("Nuevo dueño creado:", newOwner);
-      
-      // Asegurarse de que estamos enviando los encabezados correctos
-      res.setHeader('Content-Type', 'application/json');
-      res.status(201).json(newOwner);
-      console.log("Respuesta enviada al cliente:", JSON.stringify(newOwner));
-    } catch (error) {
-      console.error('Error creating pet owner:', error);
-      res.status(500).json({ message: 'Error al crear el dueño de mascota' });
-    }
-  });
-
-  apiRouter.put('/pet-owners/:id', async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      const owner = req.body;
-      const updatedOwner = await storage.updatePetOwner(id, owner);
-      res.json(updatedOwner);
-    } catch (error) {
-      console.error('Error updating pet owner:', error);
-      res.status(500).json({ message: 'Error al actualizar el dueño de mascota' });
-    }
-  });
-
-  apiRouter.delete('/pet-owners/:id', async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      const result = await storage.deletePetOwner(id);
-      
-      if (!result) {
-        return res.status(404).json({ message: 'Dueño no encontrado' });
-      }
-      
-      res.json({ message: 'Dueño eliminado con éxito' });
-    } catch (error) {
-      console.error('Error deleting pet owner:', error);
-      res.status(500).json({ message: 'Error al eliminar el dueño de mascota' });
     }
   });
 

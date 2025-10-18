@@ -14,7 +14,6 @@ Este documento es el tablero de control de tareas activas. Reemplaza al Roadmap 
 
 ## 🚀 Tareas Priorizadas (To Do)
 
-*   `[Backend]` Corregir el error de login eliminando la lógica obsoleta de `pet_owners`. **[Owner: Mauro]**
 *   `[IoT/Backend]` Unificar la configuración del broker MQTT entre el firmware y el backend. **[Owner: Mauro]**
 *   `[Frontend]` Conectar el Dashboard al WebSocket para mostrar datos en tiempo real. **[Owner: Mauro]**
 *   `[Firmware]` Configurar el proyecto en PlatformIO con las librerías necesarias. **[Owner: Javier]**
@@ -35,3 +34,5 @@ Este documento es el tablero de control de tareas activas. Reemplaza al Roadmap 
 *   `[Frontend]` Construir la base de la aplicación (UI, componentes y servicios mock).
 *   `[DB]` Implementar arquitectura de datos v2.2 con "Hogares".
 *   `[IoT/Backend]` Implementar sistema de Auto-Diagnóstico (POST) y corregir entorno Docker. **[Owner: Ambos]**
+*   `[Backend]` Revisión integral y correcciones iniciales de la interacción DB-Routes-Storage. **[Owner: Mauro]`**
+*   `[Backend]` Corregir el error de login eliminando la lógica obsoleta de `pet_owners`. **[Owner: Mauro]`**

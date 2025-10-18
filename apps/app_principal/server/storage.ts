@@ -33,6 +33,8 @@ export interface IStorage {
   getConsumptionEvents(deviceId: number, limit?: number): Promise<ConsumptionEvent[]>;
   createConsumptionEvent(data: InsertConsumptionEvent): Promise<ConsumptionEvent>;
   getLatestReadings(): Promise<SensorReading[]>;
+  getSensorData(deviceId: string, limit?: number): Promise<SensorReading[]>;
+  getSensorDataByType(deviceId: string, type: string, limit?: number): Promise<SensorReading[]>;
 
   // MQTT connection operations
   getMqttConnection(id: number): Promise<MqttConnection | undefined>;
