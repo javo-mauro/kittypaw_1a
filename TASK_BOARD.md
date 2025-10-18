@@ -14,6 +14,9 @@ Este documento es el tablero de control de tareas activas. Reemplaza al Roadmap 
 
 ## 🚀 Tareas Priorizadas (To Do)
 
+*   `[Backend]` Corregir el error de login eliminando la lógica obsoleta de `pet_owners`. **[Owner: Mauro]**
+*   `[IoT/Backend]` Unificar la configuración del broker MQTT entre el firmware y el backend. **[Owner: Mauro]**
+*   `[Frontend]` Conectar el Dashboard al WebSocket para mostrar datos en tiempo real. **[Owner: Mauro]**
 *   `[Firmware]` Configurar el proyecto en PlatformIO con las librerías necesarias. **[Owner: Javier]**
 *   `[Firmware]` Implementar la clase `WiFiManager` para la conexión. **[Owner: Javier]**
 *   `[Firmware]` Implementar la lógica de pruebas en `SelfTestManager` para el auto-diagnóstico. **[Owner: Javier]**

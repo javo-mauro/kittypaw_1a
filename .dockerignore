@@ -1,22 +1,6 @@
-# Archivos de dependencias y compilación de Node.js
-node_modules
-npm-debug.log
-
-# Carpetas de build/dist
-dist
-.turbo
-
-# Git
-.git
-.gitignore
-
-# Docker
-.dockerignore
-docker-compose.yml
-
-# Documentación y backups
-docs/
-backups/
-
-# Archivos de entorno
-.env
+**/node_modules
+**/.git
+**/.turbo
+.DS_Store
+*.log
+apps/app_camara

@@ -3,6 +3,9 @@ import {
   devices,
   pets,
   consumptionEvents,
+  mqttConnections,
+  households,
+  petsToDevices,
   type User,
   type InsertUser,
   type Device,
@@ -12,16 +15,24 @@ import {
   type ConsumptionEvent,
   type InsertConsumptionEvent,
   type SensorReading,
-  type SystemMetrics
+  type SystemMetrics,
+  type MqttConnection,
+  type InsertMqttConnection
 } from "@shared/schema";
 import { db } from './db';
-import { eq, desc, sql, and, isNull, asc } from 'drizzle-orm';
+import { eq, desc, sql, and, isNull, asc, gt } from 'drizzle-orm';
 import { IStorage } from './storage';
 
 export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: number): Promise<User | undefined> {
+    console.log(`[Storage] Attempting to get user by ID: ${id}`);
     const [user] = await db.select().from(users).where(eq(users.id, id));
+    if (user) {
+      console.log(`[Storage] Found user by ID: ${user.id}`);
+    } else {
+      console.log(`[Storage] User with ID ${id} not found.`);
+    }
     return user;
   }
 
@@ -66,13 +77,24 @@ export class DatabaseStorage implements IStorage {
     return newDevice;
   }
 
-  async updateDeviceStatus(deviceId: string, status: string): Promise<void> {
-    await db.update(devices)
-      .set({ 
-        status,
-        lastUpdate: new Date()
-      })
-      .where(eq(devices.deviceId, deviceId));
+  async updateDeviceStatus(deviceId: string, updates: Record<string, any>): Promise<void> {
+    try {
+      console.log(`[DB] Intentando actualizar dispositivo ${deviceId} con:`, updates);
+
+      const keys = Object.keys(updates);
+      if (keys.length === 0) {
+        console.warn(`[DB] No hay campos que actualizar para el dispositivo ${deviceId}`);
+        return;
+      }
+
+      await db.update(devices)
+        .set(updates)
+        .where(eq(devices.deviceId, deviceId));
+
+      console.log(`[DB] Dispositivo ${deviceId} actualizado correctamente`);
+    } catch (error) {
+      console.error(`[DB] Error actualizando estado del dispositivo ${deviceId}:`, error);
+    }
   }
 
   async updateDeviceBattery(deviceId: string, batteryLevel: number): Promise<void> {
@@ -104,88 +126,72 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getLatestReadings(): Promise<SensorReading[]> {
-    // This query now gets the latest consumption event for each device.
-    const latestReadingsQuery = `
-      WITH latest AS (
-        SELECT DISTINCT ON (device_id)
-          device_id,
-          amount_grams,
-          timestamp
-        FROM consumption_events
-        ORDER BY device_id, timestamp DESC
-      )
-      SELECT 
-        l.device_id as "deviceId",
-        'consumption' as "sensorType",
-        l.amount_grams as "value",
-        'grams' as "unit",
-        l.timestamp as "timestamp"
-      FROM latest l
-      ORDER BY l.device_id
-    `;
-    
-    const result = await db.execute(sql.raw(latestReadingsQuery));
-    return result.rows as SensorReading[];
+    const result = await db
+      .selectDistinctOn([consumptionEvents.deviceId], {
+        deviceId: consumptionEvents.deviceId,
+        sensorType: sql<string>`'consumption'`,
+        value: consumptionEvents.amountGrams,
+        unit: sql<string>`'grams'`,
+        timestamp: consumptionEvents.timestamp,
+      })
+      .from(consumptionEvents)
+      .orderBy(consumptionEvents.deviceId, desc(consumptionEvents.timestamp));
+
+    return result as SensorReading[];
   }
 
   // MQTT connection operations
-  // TODO: The mqttConnections table is not part of the current schema.
-  // These methods need to be reviewed and reimplemented if MQTT configuration storage is needed.
-  // async getMqttConnection(id: number): Promise<MqttConnection | undefined> {
-  //   const [connection] = await db.select().from(mqttConnections).where(eq(mqttConnections.id, id));
-  //   return connection;
-  // }
-  //
-  // async getMqttConnectionByUserId(userId: number): Promise<MqttConnection | undefined> {
-  //   const [connection] = await db.select()
-  //     .from(mqttConnections)
-  //     .where(eq(mqttConnections.userId, userId));
-  //   return connection;
-  // }
-  //
-  // async createMqttConnection(connection: InsertMqttConnection): Promise<MqttConnection> {
-  //   const [newConnection] = await db.insert(mqttConnections)
-  //     .values({
-  //       ...connection,
-  //       connected: false,
-  //       lastConnected: new Date()
-  //     })
-  //     .returning();
-  //   return newConnection;
-  // }
-  //
-  // async updateMqttConnectionStatus(id: number, connected: boolean): Promise<void> {
-  //   await db.update(mqttConnections)
-  //     .set({ 
-  //       connected,
-  //       lastConnected: connected ? new Date() : undefined
-  //     })
-  //     .where(eq(mqttConnections.id, id));
-  // }
+  async getMqttConnection(id: number): Promise<MqttConnection | undefined> {
+    const [connection] = await db.select().from(mqttConnections).where(eq(mqttConnections.id, id));
+    return connection;
+  }
+
+  async getMqttConnectionByUserId(userId: number): Promise<MqttConnection | undefined> {
+    const [connection] = await db.select()
+      .from(mqttConnections)
+      .where(eq(mqttConnections.userId, userId));
+    return connection;
+  }
+
+  async createMqttConnection(connection: InsertMqttConnection): Promise<MqttConnection> {
+    const [newConnection] = await db.insert(mqttConnections)
+      .values({
+        ...connection,
+        connected: false,
+        lastConnected: new Date()
+      })
+      .returning();
+    return newConnection;
+  }
+
+  async updateMqttConnectionStatus(id: number, connected: boolean): Promise<void> {
+    await db.update(mqttConnections)
+      .set({ 
+        connected,
+        lastConnected: connected ? new Date() : undefined
+      })
+      .where(eq(mqttConnections.id, id));
+  }
 
   // System operations
   async getSystemMetrics(): Promise<SystemMetrics> {
     // Contar dispositivos activos (con estado "online")
-    const activeDevicesResult = await db.select({
-      count: sql<number>`count(*)`,
-    })
-    .from(devices)
-    .where(eq(devices.status, 'online'));
+    const activeDevicesResult = await db.execute(sql.raw(`SELECT COUNT(*) as count FROM devices WHERE status = 'online'`));
     
     // Contar dispositivos que han enviado datos en los últimos 15 minutos
-    const activeSensorsQuery = `
-      SELECT COUNT(DISTINCT device_id) as count
-      FROM consumption_events
-      WHERE timestamp > NOW() - INTERVAL '15 minutes'
-    `;
-    const activeSensorsResult = await db.execute(sql.raw(activeSensorsQuery));
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+    const activeSensorsResult = await db.select({
+      count: sql<number>`count(DISTINCT ${consumptionEvents.deviceId})`,
+    })
+    .from(consumptionEvents)
+    .where(gt(consumptionEvents.timestamp, fifteenMinutesAgo));
     
     // Contar alertas (por implementar, por ahora devuelve 0)
     const alertsCount = 0;
     
     return {
       activeDevices: activeDevicesResult[0]?.count || 0,
-      activeSensors: parseInt(activeSensorsResult.rows[0]?.count || '0'),
+      activeSensors: activeSensorsResult[0]?.count || 0,
       alerts: alertsCount,
       lastUpdate: new Date().toISOString()
     };
@@ -252,12 +258,52 @@ export class DatabaseStorage implements IStorage {
       .returning({ id: pets.id });
     return result.length > 0;
   }
-  
-  // This function is deprecated as the relationship is now managed by the petsToDevices table.
-  // async getPetByKittyPawDeviceId(deviceId: string): Promise<Pet | undefined> {
-  //   const [pet] = await db.select()
-  //     .from(pets)
-  //     .where(eq(pets.kittyPawDeviceId, deviceId));
-  //   return pet;
-  // }
-}
+
+  // Data initialization
+  async getOrCreateHousehold(name: string): Promise<{ id: number }> {
+    const [household] = await db.select().from(households).where(eq(households.name, name));
+    if (household) {
+      return household;
+    }
+    const [newHousehold] = await db.insert(households).values({ name }).returning();
+    return newHousehold;
+  }
+
+  async getOrCreateUser(username: string, password: string, email: string, householdId: number): Promise<User> {
+    console.log(`[Storage] Attempting to get or create user: ${username}`);
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    if (user) {
+      console.log(`[Storage] Found existing user: ${user.id}`);
+      return user;
+    }
+    console.log(`[Storage] Creating new user: ${username}`);
+    const [newUser] = await db.insert(users).values({ username, password, email, householdId, name: username }).returning();
+    console.log(`[Storage] Created new user with ID: ${newUser.id}`);
+    return newUser;
+  }
+
+  async getOrCreatePet(name: string, householdId: number): Promise<{ id: number }> {
+    const [pet] = await db.select().from(pets).where(and(eq(pets.name, name), eq(pets.householdId, householdId)));
+    if (pet) {
+      return pet;
+    }
+    const [newPet] = await db.insert(pets).values({ name, householdId }).returning();
+    return newPet;
+  }
+
+  async getOrCreateDevice(deviceId: string, name: string, mode: string, householdId: number): Promise<{ id: number }> {
+    const [device] = await db.select().from(devices).where(eq(devices.deviceId, deviceId));
+    if (device) {
+      return device;
+    }
+    const [newDevice] = await db.insert(devices).values({ deviceId, name, mode, householdId }).returning();
+    return newDevice;
+  }
+
+  async associatePetToDevice(petId: number, deviceId: number): Promise<void> {
+    const [association] = await db.select().from(petsToDevices).where(and(eq(petsToDevices.petId, petId), eq(petsToDevices.deviceId, deviceId)));
+    if (!association) {
+      await db.insert(petsToDevices).values({ petId, deviceId });
+        }
+      }
+    }

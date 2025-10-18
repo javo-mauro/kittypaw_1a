@@ -1,32 +1,45 @@
-version: '3.8'
-
 services:
   db:
-    image: postgres:15-alpine
+    image: postgres:14-alpine
     restart: always
-    env_file:
-      - ./.env
+    environment:
+      - POSTGRES_USER=kittypaw_user
+      - POSTGRES_PASSWORD=kittypaw_password
+      - POSTGRES_DB=kittypaw_db
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kittypaw_user -d kittypaw_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  app:
+  backend:
     build:
-      context: .
-      # Usamos el nuevo Dockerfile optimizado en la raíz
-      dockerfile: Dockerfile
+      context: ./apps/app_principal
+      dockerfile: Dockerfile.backend
     ports:
-      - "3000:3000"
-    env_file:
-      - ./.env
-    environment:
-      # Asegura que el backend pueda encontrar la base de datos
-      - DATABASE_URL=${DATABASE_URL}
+      - '5000:5000'
     depends_on:
-      - db
-    # El comando ahora ejecuta la versión de producción pre-construida
-    command: npm start --workspace=app_principal
+      db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://kittypaw_user:kittypaw_password@db:5432/kittypaw_db?sslmode=disable
+
+  frontend:
+    build:
+      context: ./apps/app_principal
+      dockerfile: Dockerfile.frontend
+    ports:
+      - '5173:5173'
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:
+
+networks:
+  default:
+    driver: bridge

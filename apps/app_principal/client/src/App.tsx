@@ -11,6 +11,7 @@ import Settings from "@/pages/Settings";
 import Register from "@/pages/Register";
 import Login from "@/pages/Login";
 import Devices from "@/pages/Devices";
+import AddDevice from "@/pages/AddDevice";
 import Mascotas from "@/pages/Mascotas";
 import Planes from "@/pages/Planes";
 import Users from "@/pages/Users";
@@ -109,6 +110,9 @@ function Router() {
         </Route>
         <Route path="/devices">
           <PrivateRoute component={Devices} />
+        </Route>
+        <Route path="/devices/add">
+          <PrivateRoute component={AddDevice} />
         </Route>
         <Route path="/mascotas">
           <PrivateRoute component={Mascotas} />

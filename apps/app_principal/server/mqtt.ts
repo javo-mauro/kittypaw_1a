@@ -198,8 +198,7 @@ class MqttClient {
           if (device && device.status === 'online') {
             log(`Device ${deviceId} has been inactive for ${Math.round(timeSinceLastMsg/1000)}s, marking as offline`, 'mqtt');
             
-            // Actualizar el estado en la base de datos
-            await storage.updateDeviceStatus(deviceId, 'offline');
+            await storage.updateDeviceStatus(deviceId, { status: 'offline', lastUpdate: now });
             
             // Notificar a los clientes del cambio de estado
             this.broadcastToClients({
@@ -213,7 +212,7 @@ class MqttClient {
             // Si es null o ya está marcado como offline, solo actualizar silenciosamente la BD
             if (device) {
               // No hacemos log para eliminar contaminación del log con mensajes repetitivos
-              await storage.updateDeviceStatus(deviceId, 'offline');
+              await storage.updateDeviceStatus(deviceId, { status: 'offline', lastUpdate: now });
             }
           }
           
@@ -285,7 +284,7 @@ class MqttClient {
           const previousStatus = currentDevice ? currentDevice.status : null;
           
           // Actualizar el estado en la base de datos
-          await storage.updateDeviceStatus(deviceId, deviceStatus);
+          await storage.updateDeviceStatus(deviceId, { status: deviceStatus, lastUpdate: new Date() });
           
           // Obtenemos el dispositivo actualizado para verificar que el cambio se haya aplicado
           const updatedDevice = await storage.getDeviceByDeviceId(deviceId);
@@ -451,19 +450,25 @@ class MqttClient {
     });
   }
 
-  async loadAndConnect() {
+  async loadAndConnect(userId: number) {
     try {
+      // Get the user to retrieve their householdId
+      const user = await storage.getUser(userId);
+      if (!user) {
+        throw new Error(`User with ID ${userId} not found.`);
+      }
+      const householdId = user.householdId;
       // Debido a problemas de conexión con AWS IoT, usaremos un broker público por defecto
       log('Usando broker MQTT público para pruebas en lugar de AWS IoT', 'mqtt');
       const defaultBrokerUrl = 'mqtt://broker.emqx.io:1883';
       const defaultClientId = `kitty-paw-${Math.random().toString(16).substring(2, 10)}`;
       
       // Create a default connection in storage o actualizarlo si ya existe
-      let connection = await storage.getMqttConnectionByUserId(1);
+      let connection = await storage.getMqttConnectionByUserId(userId);
       
       if (!connection) {
         connection = await storage.createMqttConnection({
-          userId: 1,
+          userId: userId,
           brokerUrl: defaultBrokerUrl, 
           clientId: defaultClientId
         });
@@ -484,7 +489,9 @@ class MqttClient {
           name: 'Collar de Malto',
           type: 'KittyPaw Collar',
           status: 'online',
-          batteryLevel: 95
+          batteryLevel: 95,
+          householdId: householdId,
+          mode: 'collar'
         });
       }
       
@@ -495,7 +502,9 @@ class MqttClient {
           name: 'Placa de Canela',
           type: 'KittyPaw Tracker',
           status: 'online',
-          batteryLevel: 85
+          batteryLevel: 85,
+          householdId: householdId,
+          mode: 'collar'
         });
       }
       
@@ -522,8 +531,8 @@ class MqttClient {
       }, 5000); // 5 segundos de retraso
       
       return true;
-    } catch (error) {
-      log(`Error loading MQTT connection: ${error}`, 'mqtt');
+    } catch (error: any) {
+      log(`Error loading MQTT connection: ${error.stack}`, 'mqtt');
       return false;
     }
   }

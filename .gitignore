@@ -22,3 +22,6 @@ temp_script.py
 # Media and archive files
 *.mp4
 *.zip
+
+# Ignored projects
+/apps/kittypaw-landing/

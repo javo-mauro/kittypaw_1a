@@ -1,6 +1,6 @@
 import request from 'supertest';
 import express from 'express';
-import { apiRouter } from './routes';
+import { apiRouter } from "../../server/routes";
 import { storage } from './storage';
 import { db } from './db';
 import type { User, Device, ConsumptionEvent } from '@shared/schema';
