@@ -304,6 +304,30 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     }
   });
 
+  apiRouter.post('/devices/:deviceId/command', async (req: Request, res: Response) => {
+    try {
+      const { deviceId } = req.params;
+      const command = req.body;
+
+      if (!deviceId || !command || Object.keys(command).length === 0) {
+        return res.status(400).json({ error: "Device ID and command body are required" });
+      }
+
+      const topic = `${deviceId}/sub`;
+      const success = mqttClient.publish(topic, command);
+
+      if (success) {
+        log(`Command sent to ${topic}: ${JSON.stringify(command)}`, 'express');
+        res.json({ success: true, message: `Command sent to device ${deviceId}` });
+      } else {
+        res.status(500).json({ error: `Failed to send command to device ${deviceId}` });
+      }
+    } catch (error) {
+      console.error("Error sending command:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   apiRouter.get('/sensor-data/:deviceId', async (req: Request, res: Response) => {
     const { deviceId } = req.params;
     const { type, limit } = req.query;
@@ -532,7 +556,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     // Verificar si el cliente MQTT está conectado
     if (!mqttClient.isConnected()) {
       log('Cliente MQTT desconectado. Reintentando conexión...', 'express');
-      mqttClient.loadAndConnect();
+      mqttClient.loadAndConnect(1);
     }
   }, 60000);
 
