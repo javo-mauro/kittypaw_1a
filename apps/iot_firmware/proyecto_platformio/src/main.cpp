@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <LittleFS.h>
+#include <time.h>
 #include "DeviceManager.h"
 #include "WiFiManager.h"
 #include "ScaleManager.h"
@@ -10,19 +11,39 @@
 #define HX711_DOUT D1
 #define HX711_SCK D2
 
-// --- AWS IoT Endpoint ---
-const char* AWS_IOT_ENDPOINT = "a2fvfjwoybq3qw-ats.iot.us-east-2.amazonaws.com";
+// --- Local MQTT Broker ---
+const char* MQTT_BROKER_IP = "192.168.0.6";
 
 // --- Global Objects ---
 DeviceManager deviceManager;
 WiFiManager wifiManager;
 ScaleManager scaleManager(HX711_DOUT, HX711_SCK);
-MqttManager mqttManager(deviceManager, AWS_IOT_ENDPOINT);
+MqttManager mqttManager(deviceManager, MQTT_BROKER_IP);
 SelfTestManager selfTestManager;
 
 // --- Global State ---
 bool healthReportSent = false;
 String healthReportContent;
+
+// --- NTP TIME SETUP FUNCTION ---
+void setupTime() {
+    const char* ntpServer = "pool.ntp.org";
+    // GMT+0, no daylight saving
+    configTime(0, 0, ntpServer);
+
+    Serial.print("Waiting for NTP time sync: ");
+    time_t now = time(nullptr);
+    while (now < 8 * 3600 * 2) {
+        delay(500);
+        Serial.print(".");
+        now = time(nullptr);
+    }
+    Serial.println("");
+    struct tm timeinfo;
+    gmtime_r(&now, &timeinfo);
+    Serial.print("Current time: ");
+    Serial.print(asctime(&timeinfo));
+}
 
 void setup() {
     Serial.begin(115200);
@@ -33,11 +54,29 @@ void setup() {
     Serial.println("Device ID: " + deviceManager.getDeviceId());
 
     wifiManager.setup();
+
+    // --- Wait for WiFi and Set Time ---
+    Serial.println("Waiting for WiFi connection...");
+    while (!wifiManager.isConnected()) {
+        wifiManager.loop();
+        delay(100);
+    }
+    Serial.println("WiFi connected!");
+
+    setupTime();
+
+    Serial.println("Setting up ScaleManager...");
     scaleManager.setup();
+    Serial.println("ScaleManager setup complete.");
+
+    Serial.println("Setting up MqttManager...");
     mqttManager.setup(deviceManager.getDeviceId());
+    Serial.println("MqttManager setup complete.");
 
     // Run self-test to prepare the report
+    Serial.println("Running self-test...");
     healthReportContent = selfTestManager.runTests();
+    Serial.println("Self-test complete.");
     Serial.println("Health Report Generated: " + healthReportContent);
 }
 

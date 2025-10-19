@@ -16,15 +16,17 @@ ScaleManager::ScaleManager(byte doutPin, byte sckPin)
 
 void ScaleManager::setup() {
     _scale->begin(_doutPin, _sckPin);
+    _scale->set_scale(); // Default scale factor
+
     if (LittleFS.exists("/scale_offset.txt")) {
+        Serial.println("Found scale_offset.txt, loading offset...");
         File offsetFile = LittleFS.open("/scale_offset.txt", "r");
         long offset = offsetFile.readString().toInt();
         _scale->set_offset(offset);
         offsetFile.close();
+    } else {
+        Serial.println("scale_offset.txt not found. Please tare the scale manually.");
     }
-    _scale->set_scale(); // Default scale factor
-    tare();
-    _lastWeight = _scale->get_units(10);
 }
 
 void ScaleManager::loop() {

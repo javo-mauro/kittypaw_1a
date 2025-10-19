@@ -1,16 +1,16 @@
 #include "MqttManager.h"
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
+#include <WiFiClient.h>
 
-MqttManager::MqttManager(DeviceManager& deviceManager, const char* awsEndpoint)
-    : _deviceManager(deviceManager), _awsEndpoint(awsEndpoint) {
-    _wifiClient = new WiFiClientSecure();
-    _mqttClient = new PubSubClient(*_wifiClient);
+MqttManager::MqttManager(DeviceManager& deviceManager, const char* brokerIp)
+    : _deviceManager(deviceManager), _brokerIp(brokerIp) {
+    _mqttClient = new PubSubClient(_wifiClient);
 }
 
 void MqttManager::setup(String deviceId) {
     _deviceId = deviceId;
-    _mqttClient->setServer(_awsEndpoint, 8883);
+    _mqttClient->setServer(_brokerIp, 1883); // Standard MQTT port
     _mqttClient->setCallback([this](char* topic, byte* payload, unsigned int length) {
         this->_callback(topic, payload, length);
     });

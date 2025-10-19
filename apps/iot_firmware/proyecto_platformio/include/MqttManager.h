@@ -4,11 +4,11 @@
 #include <Arduino.h>
 #include "ScaleManager.h"
 #include "DeviceManager.h"
-#include <WiFiClientSecure.h>
+#include <WiFiClient.h>
 
 class MqttManager {
 public:
-    MqttManager(DeviceManager& deviceManager, const char* awsEndpoint);
+    MqttManager(DeviceManager& deviceManager, const char* brokerIp);
     void setup(String deviceId);
     void loop();
     bool isConnected();
@@ -17,9 +17,9 @@ public:
 
 private:
     DeviceManager& _deviceManager;
-    class WiFiClientSecure* _wifiClient;
+    WiFiClient _wifiClient;
     class PubSubClient* _mqttClient;
-    const char* _awsEndpoint;
+    const char* _brokerIp;
     String _deviceId;
 
     void _connect();
