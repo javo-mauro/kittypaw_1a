@@ -1,0 +1,4 @@
+bblanchon/ArduinoJson@^6.19.4
+olkal/HX711_ADC
+adafruit/DHT sensor library@^1.4.4
+knolleary/PubSubClient@^2.8
