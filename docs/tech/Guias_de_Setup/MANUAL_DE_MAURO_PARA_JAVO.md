@@ -91,9 +91,19 @@ Aquí tienes un mapa de las carpetas más importantes:
         *   `client/`: El **Frontend** (React, TypeScript). **Área de Mauro.**
         *   `server/`: El **Backend** (Node.js, API, Drizzle). **Área de Ambos.**
         *   `shared/`: Esquemas y tipos compartidos entre el frontend y el backend.
-    *   `iot_firmware/`: El **Firmware** para el dispositivo físico (ESP32). **Área de Javier.**
-        *   `lib/`: Aquí diseñamos y escribimos las clases (módulos) del firmware.
-        *   `src/`: Contiene el archivo `main.cpp` que orquesta todo.
+    *   `iot_firmware/`: El **Firmware** para el dispositivo físico (ESP8266). **Área de Javier.**
+        *   `proyecto_platformio/`: El proyecto de PlatformIO que contiene toda la lógica.
+            *   `include/`: Contiene los archivos de cabecera (`.h`) de nuestras clases.
+            *   `src/`: Contiene los archivos de implementación (`.cpp`) y el `main.cpp` que orquesta todo. Aquí viven los "Managers":
+                *   `DeviceManager`: Gestiona el estado global del dispositivo.
+                *   `WiFiManager`: Gestiona la conexión WiFi.
+                *   `MqttManager`: Gestiona la comunicación con el broker MQTT.
+                *   `ScaleManager`: Lógica del sensor de peso (HX711).
+                *   `TemperatureHumidityManager`: Lógica del sensor de ambiente (DHT11).
+                *   `LightManager`: Lógica del sensor de luz (LDR).
+                *   `SelfTestManager`: Ejecuta el auto-diagnóstico en el arranque.
+            *   `lib/`: Dependencias externas (librerías de terceros).
+            *   `platformio.ini`: El corazón de PlatformIO. Define la placa, el framework y las dependencias.
     *   `dashboard_datos/`: El dashboard interno para análisis de negocio y datos. **Área de Mauro.**
 
 *   `docs/`: **Toda la documentación del proyecto.**
@@ -161,18 +171,18 @@ Para cada tarea que tomes del `TASK_BOARD.md`, el proceso es el siguiente:
 2.  **Crea una Nueva Rama:** Crea una rama nueva para tu tarea. Usa un nombre descriptivo.
     ```bash
     # Ejemplo para una tarea de firmware
-    git checkout -b javier/setup-platformio
+    git checkout -b javier/feature-nueva-cosa
     ```
 
-3.  **Trabaja y Haz Commits:** Haz tu trabajo en esta nueva rama. Recuerda hacer commits pequeños y frecuentes (¡nuestro recordatorio de 40 minutos te ayudará!). Usa mensajes de commit claros.
+3.  **Trabaja y Haz Commits:** Haz tu trabajo en esta nueva rama. Recuerda hacer commits pequeños y frecuentes. Usa mensajes de commit claros.
     ```bash
     git add .
-    git commit -m "feat(firmware): Implementa la clase WiFiManager"
+    git commit -m "feat(firmware): Implementa la clase FooManager"
     ```
 
 4.  **Sube tu Rama:** Cuando hayas terminado la tarea (o al final del día), sube tu rama a GitHub.
     ```bash
-    git push origin javier/setup-platformio
+    git push origin javier/feature-nueva-cosa
     ```
 
 5.  **Crea un Pull Request (PR):** En la página de GitHub del proyecto, verás una opción para crear un "Pull Request" desde tu rama hacia `main`. Al crearlo, asigna al otro miembro del equipo (en este caso, a Mauro) como "Reviewer".
@@ -185,35 +195,57 @@ Este proceso protege nuestra rama principal y nos permite a ambos revisar el tra
 
 ---
 
-## Parte 8: Tu Próxima Misión - Auto-Diagnóstico del Dispositivo
+## Parte 8: Funcionalidades Clave del Firmware (¡Actualizado!)
 
-Javo, hemos definido una nueva funcionalidad clave para el firmware: un **Sistema de Auto-Diagnóstico en Arranque (POST)**.
+Javo, el firmware ha evolucionado significativamente. La antigua "misión" del auto-diagnóstico ya está **implementada y funcionando**. Aquí tienes un resumen del estado actual para que estés al día:
 
-**El Objetivo:**
-Cada vez que un dispositivo se encienda, debe realizar una serie de pruebas internas para verificar que sus componentes (sensores, memoria, WiFi) funcionan correctamente. Luego, debe enviar un reporte de "salud" al backend. Esto nos permitirá saber si algún dispositivo en campo está fallando.
+### 1. Arquitectura 100% Modular
+Olvídate del antiguo archivo `.ino`. El firmware ahora está organizado en **"Managers"**, que son clases de C++ con responsabilidades únicas. Esto hace que el código sea más limpio, fácil de mantener y de extender. Los encontrarás en `apps/iot_firmware/proyecto_platformio/src/`.
 
-**Tu Tarea:**
-He creado el esqueleto del módulo que se encargará de esto. Tu misión es implementar la lógica de las pruebas.
+### 2. Lógica de Publicación Híbrida
+El dispositivo es ahora mucho más inteligente en cómo y cuándo envía datos:
+*   **Telemetría Periódica:** Cada 5 segundos, publica un reporte completo con los datos de todos los sensores (temperatura, humedad, luz y peso actual) en el tópico `KPCL0022/pub`. Esto nos da una visión constante del estado del dispositivo.
+*   **Eventos de Consumo:** De forma paralela, el `ScaleManager` detecta activamente cuándo la mascota está comiendo o bebiendo. Cuando esto ocurre, envía un evento especial al tópico `kittypaw/events` con detalles clave como la duración y la cantidad consumida en gramos.
 
-1.  **Nuevos Archivos Creados para Ti:**
-    *   `apps/iot_firmware/lib/SelfTestManager/SelfTestManager.h`
-    *   `apps/iot_firmware/lib/SelfTestManager/SelfTestManager.cpp`
-
-2.  **Documento de Especificaciones:**
-    Toda la información sobre qué pruebas realizar y el formato del reporte está en:
-    `docs/tech/Firmware_Features/AUTO_DIAGNOSTICO_POST.md`. ¡Léelo con atención!
-
-3.  **¿Qué tienes que hacer?**
-    En `SelfTestManager.cpp`, verás varias funciones de prueba vacías (ej. `_testFilesystem()`, `_testSensorHx711()`). Debes rellenarlas con el código que realice la comprobación descrita en el documento de especificaciones.
-
-4.  **El Backend está Listo:**
-    Ya he modificado el backend (`mqtt.ts`) para que escuche en el tópico `kittypaw/reports/health` y guarde estos reportes en la base de datos. Una vez que implementes el firmware, el sistema funcionará de punta a punta.
-
-Esta es una funcionalidad muy importante para la robustez del producto. ¡Con esto, el firmware dará un gran salto de calidad!
+### 3. Auto-Diagnóstico en Arranque (POST)
+El `SelfTestManager` que implementaste ahora es una parte crucial del arranque. Cada vez que el dispositivo se enciende, realiza una serie de chequeos internos (sensores, memoria, etc.) y publica un **reporte de salud** en el tópico `kittypaw/reports/health`. El backend ya está preparado para recibir y almacenar estos reportes, lo que nos permitirá monitorear la salud de toda nuestra flota de dispositivos.
 
 ---
 
-¡Y eso es todo! Ahora sí tienes el mapa completo. Con `docker-compose up -d` corriendo y este mapa de carpetas, estás listo para empezar a trabajar. Si tienes cualquier duda, ¡solo pregunta!
+## Parte 9: Cómo Probar el Firmware Localmente
+
+Para poder ver los datos que envía el dispositivo en tu PC, necesitas montar un pequeño entorno local.
+
+### Requisitos
+- **Broker Mosquitto:** Asegúrate de que el broker MQTT esté corriendo en tu PC.
+    1. Abre una terminal.
+    2. Navega a su carpeta: `cd D:\mosquitto`
+    3. Ejecuta: `.\mosquitto.exe -c mosquitto.conf -v`
+    4. **Deja esta terminal abierta.**
+- **Red WiFi:** Tu PC y el ESP8266 deben estar en la misma red (`VTR-2736410_2g`).
+- **IP del Broker:** El PC debe tener la IP `192.168.0.6`. Si no es así, debes cambiarla en `src/main.cpp` y volver a compilar y subir el firmware.
+
+### Pasos para Visualizar Datos
+1.  **Modo Conectado (Depuración):**
+    *   Conecta el ESP8266 a tu PC vía USB.
+    *   En VSCode, abre el proyecto `proyecto_platformio`.
+    *   Haz clic en el icono del **enchufe** (🔌) en la barra de PlatformIO para abrir el **Monitor Serial**. Verás todos los logs internos (`Serial.println`).
+
+2.  **Modo Autónomo (Visualizar Datos MQTT):**
+    *   Con el broker Mosquitto corriendo, abre una **nueva terminal**.
+    *   Navega a la carpeta del proyecto de firmware:
+      ```sh
+      cd D:\Escritorio\Proyectos\KittyPaw\Kittypaw_1a\apps\iot_firmware\proyecto_platformio
+      ```
+    *   Ejecuta el script receptor que hemos preparado:
+      ```sh
+      python receptor_local.py
+      ```
+    *   Alimenta el dispositivo con su batería. En la terminal del `receptor_local.py`, verás los mensajes JSON (telemetría, eventos, reportes de salud) que el dispositivo publica en tiempo real.
+
+---
+
+¡Y eso es todo! Ahora sí tienes el mapa completo y actualizado. Con `docker-compose up -d` para el backend y estas instrucciones para el firmware, estás listo para seguir desarrollando.
 
 ---
 
