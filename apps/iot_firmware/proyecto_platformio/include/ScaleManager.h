@@ -1,7 +1,7 @@
 #ifndef SCALE_MANAGER_H
 #define SCALE_MANAGER_H
 
-#include <Arduino.h>
+#include <HX711_ADC.h>
 
 struct ConsumptionEvent {
     float amount_consumed_grams;
@@ -17,11 +17,12 @@ public:
     void loop();
     void tare();
     bool getConsumptionEvent(ConsumptionEvent& event);
+    float getWeight();
 
 private:
     byte _doutPin;
     byte _sckPin;
-    class HX711* _scale;
+    HX711_ADC* _scale;
     ScaleState _currentState;
     float _initialWeight;
     unsigned long _eventStartTime;
@@ -30,7 +31,7 @@ private:
     bool _eventReady;
     float _lastWeight;
 
-    void _updateState();
+    void _updateState(float currentWeight);
 };
 
 #endif

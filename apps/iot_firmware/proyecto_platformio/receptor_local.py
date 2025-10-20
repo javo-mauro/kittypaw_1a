@@ -39,7 +39,7 @@ def on_message(client, userdata, msg):
 
 if __name__ == "__main__":
     # Crear y configurar el cliente
-    client = mqtt.Client()
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
     client.on_connect = on_connect
     client.on_message = on_message
 

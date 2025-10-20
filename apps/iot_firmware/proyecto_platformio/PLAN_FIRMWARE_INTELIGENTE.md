@@ -10,79 +10,37 @@ Este documento detalla los cambios necesarios en el firmware `KPCL0022_Gem_1a.in
     *   El dispositivo debe poder ser configurado como "Comedero" o "Bebedero".
     *   Esta configuración se recibirá a través de un mensaje MQTT y se guardará en la memoria no volátil (LittleFS) para que persista entre reinicios.
 
-2.  **Detección de Eventos Local (Lógica Opción B):**
-    *   El dispositivo ya no enviará datos de sensores en un intervalo fijo.
-    *   En su lugar, monitoreará continuamente el sensor de peso para detectar eventos de "consumo" (la mascota comiendo o bebiendo).
-    *   Cuando se detecte y finalice un evento, el dispositivo enviará un único mensaje MQTT con los datos procesados del evento.
+## 2. Lógica de Publicación Híbrida
 
-3.  **Nuevo Formato de Mensaje MQTT:**
-    *   El payload de los datos publicados cambiará para reflejar la naturaleza del evento.
+*   El dispositivo ha evolucionado de un modelo de solo-eventos a un **modelo híbrido** más completo.
+*   **Publicación Periódica:** Cada 5 segundos, el dispositivo publica una telemetría completa con los datos de todos los sensores (temperatura, humedad, luz y peso actual). Esto proporciona un monitoreo constante del estado del dispositivo y su entorno.
+*   **Publicación de Eventos:** En paralelo, el `ScaleManager` monitorea continuamente el sensor de peso. Si detecta un evento de "consumo" (la mascota comiendo o bebiendo), publica un mensaje separado y específico para ese evento con detalles como la duración y la cantidad consumida.
 
----
+### 2.3. Nuevo Formato de Mensaje MQTT
 
-## 2. Cambios Técnicos Propuestos en `KPCL0022_Gem_1a.ino`
+Existen dos tipos de mensajes principales:
 
-### 2.1. Nuevas Variables Globales y Constantes
-
-Se necesitarán nuevas variables para manejar el estado de la detección y la configuración del modo.
-
-```cpp
-// Modo de operación del dispositivo
-enum DeviceMode { COMEDERO, BEBEDERO };
-DeviceMode currentMode = COMEDERO; // Valor por defecto
-
-// Estados para la máquina de estados de detección
-enum DetectionState { IDLE, DETECTING_CHANGE, PET_PRESENT, COOLDOWN };
-DetectionState currentState = IDLE;
-
-// Umbrales y temporizadores para la detección
-const float WEIGHT_CHANGE_THRESHOLD = 5.0; // Mínimo cambio de peso en gramos para iniciar detección
-const unsigned long EVENT_TIMEOUT = 30000; // 30 segundos sin cambios para finalizar un evento
-
-// Variables para medir el evento
-unsigned long eventStartTime = 0;
-float initialWeight = 0.0;
-```
-
-### 2.2. Modificación de la Función `callback()` de MQTT
-
-La función que procesa los mensajes MQTT entrantes (`KPCL0022/sub`) debe ser actualizada para reconocer un nuevo comando de configuración.
-
-*   **Mensaje JSON esperado:** `{"device_mode": "comedero"}` o `{"device_mode": "bebedero"}`.
-*   **Acción:** Al recibir este mensaje, el firmware actualizará la variable `currentMode` y guardará la configuración en un nuevo archivo en LittleFS (ej: `config.txt`).
-
-### 2.3. Refactorización Profunda del `loop()` Principal
-
-El `loop()` actual, que probablemente tiene un `delay()` y envía datos periódicamente, será reemplazado por una máquina de estados no bloqueante.
-
-*   **Estado `IDLE`:**
-    *   Lee el peso continuamente.
-    *   Si `abs(currentWeight - lastWeight) > WEIGHT_CHANGE_THRESHOLD`, se asume que una mascota se ha acercado.
-    *   Se transita al estado `PET_PRESENT`, se guarda `initialWeight` y `eventStartTime`.
-
-*   **Estado `PET_PRESENT`:**
-    *   Continúa midiendo el peso.
-    *   Si el peso se mantiene relativamente estable (con pequeñas fluctuaciones a la baja) pero no vuelve al valor inicial, se actualiza un temporizador.
-    *   Si el peso vuelve al `initialWeight` o si el temporizador de `EVENT_TIMEOUT` expira, el evento se considera finalizado.
-    *   Se calcula `eventDuration` y `amountConsumed = initialWeight - finalWeight`.
-    *   Se construye y publica el JSON del evento.
-    *   Se transita al estado `COOLDOWN`.
-
-*   **Estado `COOLDOWN`:**
-    *   Un breve período de espera para evitar la detección de eventos duplicados inmediatamente después de que uno ha terminado. Luego, se vuelve a `IDLE`.
-
-### 2.4. Nuevo Formato de Payload de Publicación
-
-El JSON enviado al tema `KPCL0022/pub` cambiará. En lugar de todos los datos de los sensores, se enviará un evento.
-
-**Ejemplo de Payload:**
+**1. Telemetría Periódica (ej. `KPCL0022/pub`):**
 ```json
 {
-  "deviceId": "ESP8266_XXXX",
-  "timestamp": "2025-10-07T18:30:00Z",
+  "device_id": "KP-4CEBD61FBA19",
+  "timestamp": 11400,
+  "payload": {
+    "temperature": 25.20,
+    "humidity": 30.70,
+    "light": 0,
+    "weight": 105.5
+  }
+}
+```
+
+**2. Evento de Consumo (ej. `kittypaw/events`):**
+```json
+{
+  "deviceId": "KP-4CEBD61FBA19",
   "eventType": "consumo",
   "payload": {
-    "mode": "comedero", // o "bebedero"
+    "mode": "comedero",
     "duration_seconds": 45,
     "amount_consumed_grams": 20.5
   }

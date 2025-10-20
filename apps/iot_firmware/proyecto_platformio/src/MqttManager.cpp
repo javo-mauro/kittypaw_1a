@@ -45,6 +45,10 @@ void MqttManager::publishHealthReport(String report) {
     _mqttClient->publish("kittypaw/reports/health", report.c_str());
 }
 
+void MqttManager::publishSensorData(String data) {
+    _mqttClient->publish("KPCL0022/pub", data.c_str());
+}
+
 void MqttManager::_connect() {
     Serial.println("Connecting to MQTT...");
     while (!_mqttClient->connected()) {

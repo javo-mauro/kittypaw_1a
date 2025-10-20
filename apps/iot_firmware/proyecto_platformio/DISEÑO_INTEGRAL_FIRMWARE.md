@@ -27,155 +27,77 @@ Cada módulo se diseñará como una clase de C++ con una única responsabilidad,
 
 ### 3.1. Módulo `ScaleManager`
 
-*   **Propósito:** Encapsula toda la lógica del sensor de peso (HX711) y la detección de eventos de consumo.
-*   **Ubicación:** `lib/ScaleManager/`
-*   **Interfaz (`ScaleManager.h`):**
+*   **Propósito:** Encapsula toda la lógica del sensor de peso y la detección de eventos de consumo.
+*   **Librería Clave:** `olkal/HX711_ADC`. Esta librería fue seleccionada específicamente por su arquitectura no bloqueante, que es esencial para la estabilidad del ESP8266 en aplicaciones de red.
+*   **Ubicación:** `src/` y `include/` (como parte de la arquitectura de PlatformIO).
 *   **Estado:** Implementado
-    ```cpp
-    #pragma once
-    #include <Arduino.h>
+*   **Lógica de Implementación:** El `loop()` del manager llama a `_scale->update()` continuamente. La inicialización y la tara (calibración a cero) se realizan de forma no bloqueante al arranque para no interferir con la conexión WiFi y MQTT.
 
-    struct ConsumptionEvent {
-      bool valid = false;
-      float amount_consumed_grams = 0.0;
-      unsigned long duration_seconds = 0;
-    };
+### 3.2. Módulos de Sensores Ambientales
 
-    class ScaleManager {
-    public:
-      ScaleManager(byte doutPin, byte sckPin);
-      void begin();
-      void tare();
-      ConsumptionEvent update();
-    private:
-      // ... (variables privadas como en el diseño anterior)
-    };
-    ```
+*   **Propósito:** Se crearon `TemperatureHumidityManager` y `LightManager` para encapsular la lógica de los sensores DHT11 y LDR, respectivamente, siguiendo el mismo patrón de diseño modular.
+*   **Estado:** Implementados
 
-### 3.2. Módulo `DeviceManager`
+### 3.3. Módulo `DeviceManager`
 
-*   **Propósito:** Gestiona la configuración y el estado global del dispositivo (ID, modo de operación).
-*   **Ubicación:** `lib/DeviceManager/`
-*   **Interfaz (`DeviceManager.h`):
+*   **Propósito:** Gestiona la configuración, el estado global del dispositivo (ID, modo) y ahora también centraliza la recolección de datos de todos los sensores.
 *   **Estado:** Implementado
-    ```cpp
-    #pragma once
-    #include <Arduino.h>
 
-    enum class DeviceMode { COMEDERO, BEBEDERO, UNKNOWN };
+### 3.4. Módulo `WiFiManager`
 
-    class DeviceManager {
-    public:
-      void begin();
-      String getDeviceID() const;
-      DeviceMode getMode() const;
-      void setMode(DeviceMode newMode);
-    private:
-      String _deviceID;
-      DeviceMode _currentMode = DeviceMode::UNKNOWN;
-      void loadConfiguration();
-      void saveConfiguration();
-    };
-    ```
-*   **Lógica de Implementación:** `begin()` cargará la configuración desde un `config.json` en LittleFS. `setMode()` la guardará. `getDeviceID()` construirá un ID único a partir de la MAC del ESP8266.
-
-### 3.3. Módulo `WiFiManager`
-
-*   **Propósito:** Gestiona la conexión a la red WiFi de forma no bloqueante.
-*   **Ubicación:** `lib/WiFiManager/`
-*   **Interfaz (`WiFiManager.h`):
+*   **Propósito:** Gestiona la conexión a la red WiFi.
 *   **Estado:** Implementado
-    ```cpp
-    #pragma once
-    #include <Arduino.h>
 
-    class WiFiManager {
-    public:
-      void begin(const char* ssid, const char* password);
-      void handleConnection();
-    private:
-      const char* _ssid;
-      const char* _password;
-      unsigned long _reconnectInterval = 5000; // 5 segundos
-      unsigned long _lastReconnectAttempt = 0;
-    };
-    ```
-*   **Lógica de Implementación:** `handleConnection()` comprobará el estado de la conexión en cada ciclo. Si está desconectado, intentará reconectar solo si ha pasado el tiempo de `_reconnectInterval`, evitando así bloquear el `loop()`.
+### 3.5. Módulo `MqttManager`
 
-### 3.4. Módulo `MqttManager`
-
-*   **Propósito:** Gestiona la comunicación con el broker MQTT (conexión, publicación, suscripción).
-*   **Ubicación:** `lib/MqttManager/`
-*   **Interfaz (`MqttManager.h`):
+*   **Propósito:** Gestiona la comunicación con el broker MQTT.
 *   **Estado:** Implementado
-    ```cpp
-    #pragma once
-    #include <Arduino.h>
-    #include "DeviceManager.h"
-    #include "ScaleManager.h"
-
-    class MqttManager {
-    public:
-      MqttManager(Client& netClient, DeviceManager& deviceManager);
-      void begin(const char* server, int port);
-      void handleConnection();
-      void loop(); // Para procesar mensajes entrantes
-      void publishEvent(const ConsumptionEvent& event);
-    private:
-      // ... (cliente, puntero a deviceManager, etc.)
-      void callback(char* topic, byte* payload, unsigned int length); // Procesar mensajes
-    };
-    ```
-*   **Lógica de Implementación:** Similar al `WiFiManager` para la reconexión. El `callback` procesará comandos como `setMode` y llamará a `_deviceManager.setMode()`. `publishEvent` usará `ArduinoJson` para crear el payload.
 
 ---
 
 ## 4. Fase 3: Integración en `main.cpp`
 
-El archivo principal será limpio y servirá como orquestador de los módulos.
+El archivo principal orquesta la inicialización y el bucle de todos los módulos.
 
 *   **Ubicación:** `src/main.cpp`
-*   **Código de Ejemplo:**
+*   **Código Final:**
     ```cpp
     #include <Arduino.h>
-    #include "WiFiManager.h"
+    // ... includes ...
     #include "DeviceManager.h"
-    #include "MqttManager.h"
+    #include "WiFiManager.h"
     #include "ScaleManager.h"
+    #include "MqttManager.h"
 
-    // --- Configuración de Pines y Credenciales ---
-    #define WIFI_SSID "..."
-    #define WIFI_PASS "..."
-    #define MQTT_SERVER "..."
+    // --- Definiciones ---
+    #define HX711_DOUT D1
+    #define HX711_SCK D2
 
-    #define HX711_DOUT_PIN 4
-    #define HX711_SCK_PIN 5
-
-    // --- Instanciación de Módulos ---
-    DeviceManager deviceManager;
+    // --- Instanciación de Módulos (el orden es importante) ---
+    ScaleManager scaleManager(HX711_DOUT, HX711_SCK);
+    DeviceManager deviceManager(scaleManager);
     WiFiManager wifiManager;
-    ScaleManager scaleManager(HX711_DOUT_PIN, HX711_SCK_PIN);
-    
-    WiFiClient netClient;
-    MqttManager mqttManager(netClient, deviceManager);
+    MqttManager mqttManager(deviceManager, "192.168.0.6");
+    // ...
 
     void setup() {
-      Serial.begin(115200);
+      // ... inicialización del serial, LittleFS ...
       
-      deviceManager.begin();
-      wifiManager.begin(WIFI_SSID, WIFI_PASS);
-      scaleManager.begin();
-      mqttManager.begin(MQTT_SERVER, 1883);
+      deviceManager.setup();
+      wifiManager.setup();
+      // ... esperar a WiFi ...
+      scaleManager.setup();
+      mqttManager.setup(deviceManager.getDeviceId());
+      // ...
     }
 
     void loop() {
-      wifiManager.handleConnection();
-      mqttManager.handleConnection();
+      wifiManager.loop();
       mqttManager.loop();
+      scaleManager.loop();
 
-      ConsumptionEvent event = scaleManager.update();
-      if (event.valid) {
-        mqttManager.publishEvent(event);
+      if (wifiManager.isConnected() && mqttManager.isConnected()) {
+        // ... lógica para publicar reporte de salud, eventos de consumo y datos periódicos ...
       }
     }
     ```

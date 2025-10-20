@@ -14,6 +14,7 @@ public:
     bool isConnected();
     void publishConsumptionEvent(const ConsumptionEvent& event, String deviceMode);
     void publishHealthReport(String report);
+    void publishSensorData(String data);
 
 private:
     DeviceManager& _deviceManager;

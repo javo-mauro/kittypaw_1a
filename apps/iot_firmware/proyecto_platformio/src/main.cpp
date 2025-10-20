@@ -15,15 +15,19 @@
 const char* MQTT_BROKER_IP = "192.168.0.6";
 
 // --- Global Objects ---
-DeviceManager deviceManager;
-WiFiManager wifiManager;
 ScaleManager scaleManager(HX711_DOUT, HX711_SCK);
+DeviceManager deviceManager(scaleManager);
+WiFiManager wifiManager;
 MqttManager mqttManager(deviceManager, MQTT_BROKER_IP);
 SelfTestManager selfTestManager;
 
 // --- Global State ---
 bool healthReportSent = false;
 String healthReportContent;
+unsigned long lastSensorPublish = 0;
+const long sensorPublishInterval = 5000; // 5 seconds
+
+// --- NTP TIME SETUP FUNCTION ---
 
 // --- NTP TIME SETUP FUNCTION ---
 void setupTime() {
@@ -97,6 +101,14 @@ void loop() {
         if (scaleManager.getConsumptionEvent(event)) {
             Serial.println("Consumption event detected!");
             mqttManager.publishConsumptionEvent(event, deviceManager.getDeviceMode());
+        }
+
+        // Periodically publish sensor data
+        if (millis() - lastSensorPublish > sensorPublishInterval) {
+            lastSensorPublish = millis();
+            String sensorData = deviceManager.getSensorData();
+            Serial.println("Publishing sensor data: " + sensorData);
+            mqttManager.publishSensorData(sensorData);
         }
     }
 }
