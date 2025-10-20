@@ -2,6 +2,7 @@ import * as mqtt from 'mqtt';
 import { storage } from './storage';
 import { WebSocket } from 'ws';
 import { log } from './vite';
+import * as fs from 'fs';
 
 class MqttClient {
   private client: mqtt.MqttClient | null = null;
@@ -198,8 +199,7 @@ class MqttClient {
           if (device && device.status === 'online') {
             log(`Device ${deviceId} has been inactive for ${Math.round(timeSinceLastMsg/1000)}s, marking as offline`, 'mqtt');
             
-            // Actualizar el estado en la base de datos
-            await storage.updateDeviceStatus(deviceId, 'offline');
+            await storage.updateDeviceStatus(deviceId, { status: 'offline', lastUpdate: now });
             
             // Notificar a los clientes del cambio de estado
             this.broadcastToClients({
@@ -213,7 +213,7 @@ class MqttClient {
             // Si es null o ya está marcado como offline, solo actualizar silenciosamente la BD
             if (device) {
               // No hacemos log para eliminar contaminación del log con mensajes repetitivos
-              await storage.updateDeviceStatus(deviceId, 'offline');
+              await storage.updateDeviceStatus(deviceId, { status: 'offline', lastUpdate: now });
             }
           }
           
@@ -285,7 +285,7 @@ class MqttClient {
           const previousStatus = currentDevice ? currentDevice.status : null;
           
           // Actualizar el estado en la base de datos
-          await storage.updateDeviceStatus(deviceId, deviceStatus);
+          await storage.updateDeviceStatus(deviceId, { status: deviceStatus, lastUpdate: new Date() });
           
           // Obtenemos el dispositivo actualizado para verificar que el cambio se haya aplicado
           const updatedDevice = await storage.getDeviceByDeviceId(deviceId);
@@ -451,53 +451,80 @@ class MqttClient {
     });
   }
 
-  async loadAndConnect() {
+  async loadAndConnect(userId: number) {
     try {
-      // Debido a problemas de conexión con AWS IoT, usaremos un broker público por defecto
-      log('Usando broker MQTT público para pruebas en lugar de AWS IoT', 'mqtt');
-      const defaultBrokerUrl = 'mqtt://broker.emqx.io:1883';
-      const defaultClientId = `kitty-paw-${Math.random().toString(16).substring(2, 10)}`;
-      
-      // Create a default connection in storage o actualizarlo si ya existe
-      let connection = await storage.getMqttConnectionByUserId(1);
-      
-      if (!connection) {
-        connection = await storage.createMqttConnection({
-          userId: 1,
-          brokerUrl: defaultBrokerUrl, 
-          clientId: defaultClientId
-        });
+      // Get the user to retrieve their householdId
+      const user = await storage.getUser(userId);
+      if (!user) {
+        throw new Error(`User with ID ${userId} not found.`);
+      }
+      const householdId = user.householdId;
+
+      // Obtener la configuración de AWS IoT Core desde las variables de entorno
+      const awsIotMqttHost = process.env.AWS_IOT_MQTT_HOST;
+      const awsIotCertCaPath = process.env.AWS_IOT_CERT_CA_PATH;
+      const awsIotCertClientPath = process.env.AWS_IOT_CERT_CLIENT_PATH;
+      const awsIotPrivateKeyPath = process.env.AWS_IOT_PRIVATE_KEY_PATH;
+
+      if (!awsIotMqttHost || !awsIotCertCaPath || !awsIotCertClientPath || !awsIotPrivateKeyPath) {
+        log('AWS IoT Core environment variables are not fully configured. Falling back to public broker for testing.', 'mqtt');
+        const defaultBrokerUrl = 'mqtt://broker.emqx.io:1883';
+        const defaultClientId = `kitty-paw-${Math.random().toString(16).substring(2, 10)}`;
+        
+        let connection = await storage.getMqttConnectionByUserId(userId);
+        if (!connection) {
+          connection = await storage.createMqttConnection({
+            userId: userId,
+            brokerUrl: defaultBrokerUrl, 
+            clientId: defaultClientId
+          });
+        }
+        this.connectionId = connection.id;
+        await this.connect(defaultBrokerUrl, defaultClientId);
+      } else {
+        log('Using AWS IoT Core configuration.', 'mqtt');
+        const brokerUrl = `mqtts://${awsIotMqttHost}:8883`;
+        const clientId = `kitty-paw-backend-${Math.random().toString(16).substring(2, 10)}`; // Unique client ID for backend
+
+        // Leer los contenidos de los certificados
+        const caCert = fs.readFileSync(awsIotCertCaPath).toString();
+        const clientCert = fs.readFileSync(awsIotCertClientPath).toString();
+        const privateKey = fs.readFileSync(awsIotPrivateKeyPath).toString();
+
+        // Create a default connection in storage o actualizarlo si ya existe
+        let connection = await storage.getMqttConnectionByUserId(userId);
+        if (!connection) {
+          connection = await storage.createMqttConnection({
+            userId: userId,
+            brokerUrl: brokerUrl, 
+            clientId: clientId
+          });
+        }
+        this.connectionId = connection.id;
+        await this.connect(brokerUrl, clientId, undefined, undefined, caCert, clientCert, privateKey);
       }
       
-      this.connectionId = connection.id;
-      await this.connect(defaultBrokerUrl, defaultClientId);
-      
-      // Asegurarnos de que estamos suscritos a ambos tópicos KPCL0021/pub y KPCL0022/pub
-      this.addTopic('KPCL0021');
-      this.addTopic('KPCL0022');
-      
-      // Verificar si los dispositivos existen, si no, crearlos
+      // --- Device Initialization and Dynamic Topic Subscription ---
+
+      // For prototyping, ensure default devices exist
+      const householdId = user.householdId; // Assuming user object is available from earlier in the function
       let device1 = await storage.getDeviceByDeviceId('KPCL0021');
       if (!device1) {
-        device1 = await storage.createDevice({
-          deviceId: 'KPCL0021',
-          name: 'Collar de Malto',
-          type: 'KittyPaw Collar',
-          status: 'online',
-          batteryLevel: 95
-        });
+        await storage.createDevice({ deviceId: 'KPCL0021', name: 'Collar de Malto', type: 'KittyPaw Collar', status: 'online', batteryLevel: 95, householdId: householdId, mode: 'collar' });
       }
-      
       let device2 = await storage.getDeviceByDeviceId('KPCL0022');
       if (!device2) {
-        device2 = await storage.createDevice({
-          deviceId: 'KPCL0022',
-          name: 'Placa de Canela',
-          type: 'KittyPaw Tracker',
-          status: 'online',
-          batteryLevel: 85
-        });
+        await storage.createDevice({ deviceId: 'KPCL0022', name: 'Placa de Canela', type: 'KittyPaw Tracker', status: 'online', batteryLevel: 85, householdId: householdId, mode: 'collar' });
       }
+
+      // Dynamically subscribe to topics for all devices in the database
+      log('Fetching all devices for dynamic topic subscription...', 'mqtt');
+      const allDevices = await storage.getDevices();
+      for (const device of allDevices) {
+        this.addTopic(`${device.deviceId}/pub`);
+        this.addTopic(`${device.deviceId}/sub`);
+      }
+      log(`Dynamically subscribed to topics for ${allDevices.length} devices.`, 'mqtt');
       
       // Iniciar el temporizador de detección de dispositivos inactivos
       this.startOfflineCheckTimer();
@@ -522,8 +549,8 @@ class MqttClient {
       }, 5000); // 5 segundos de retraso
       
       return true;
-    } catch (error) {
-      log(`Error loading MQTT connection: ${error}`, 'mqtt');
+    } catch (error: any) {
+      log(`Error loading MQTT connection: ${error.stack}`, 'mqtt');
       return false;
     }
   }
@@ -539,11 +566,7 @@ class MqttClient {
     // Si el mensaje es un objeto, convertirlo a string
     const messageStr = typeof message === 'object' ? JSON.stringify(message) : message;
     
-    // Asegurar que el tópico tenga el formato correcto
-    const formattedTopic = topic.includes('/') ? topic : `${topic}/pub`;
-    
-    this.client.publish(formattedTopic, messageStr);
-    log(`Published message to ${formattedTopic}: ${messageStr}`, 'mqtt');
+    this.client.publish(topic, messageStr);
     
     // Si el mensaje contiene un device_id y un status, actualizar el timestamp de lastSeen
     try {

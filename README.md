@@ -13,6 +13,14 @@ El proyecto utiliza [Turborepo](https://turbo.build/) para gestionar el monorepo
 
 -   **/docs**: Contiene toda la documentación funcional y técnica del proyecto, incluyendo el modelo de negocio y la arquitectura.
 
+## 🐋 Arquitectura Docker
+
+El proyecto está completamente contenedorizado usando Docker y Docker Compose para asegurar un entorno de desarrollo consistente y reproducible. La arquitectura consiste en tres servicios principales: una base de datos PostgreSQL, el backend de Node.js y el frontend de React.
+
+Para una explicación detallada de la configuración, los servicios y el flujo de trabajo de colaboración, por favor consulta el documento de arquitectura completo:
+
+**[➡️ Ver Arquitectura Docker Completa](./docs/tech/ARQUITECTURA_DOCKER.md)**
+
 ## 🏁 Cómo Empezar
 
 Sigue estos pasos para configurar y ejecutar el entorno de desarrollo en tu máquina local.

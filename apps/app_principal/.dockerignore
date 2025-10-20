@@ -8,7 +8,7 @@ build
 # Ignorar archivos específicos del sistema operativo y del editor
 .DS_Store
 *.log
-.env
+
 
 # Ignorar la configuración de vite y los archivos temporales
 vite.config.ts.*

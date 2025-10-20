@@ -8,7 +8,9 @@ import type {
   ConsumptionEvent,
   InsertConsumptionEvent,
   SensorReading,
-  SystemMetrics
+  SystemMetrics,
+  MqttConnection,
+  InsertMqttConnection
 } from "@shared/schema";
 import { DatabaseStorage } from './database-storage';
 
@@ -31,6 +33,14 @@ export interface IStorage {
   getConsumptionEvents(deviceId: number, limit?: number): Promise<ConsumptionEvent[]>;
   createConsumptionEvent(data: InsertConsumptionEvent): Promise<ConsumptionEvent>;
   getLatestReadings(): Promise<SensorReading[]>;
+  getSensorData(deviceId: string, limit?: number): Promise<SensorReading[]>;
+  getSensorDataByType(deviceId: string, type: string, limit?: number): Promise<SensorReading[]>;
+
+  // MQTT connection operations
+  getMqttConnection(id: number): Promise<MqttConnection | undefined>;
+  getMqttConnectionByUserId(userId: number): Promise<MqttConnection | undefined>;
+  createMqttConnection(connection: InsertMqttConnection): Promise<MqttConnection>;
+  updateMqttConnectionStatus(id: number, connected: boolean): Promise<void>;
 
   // System operations
   getSystemMetrics(): Promise<SystemMetrics>;
@@ -43,6 +53,13 @@ export interface IStorage {
   createPet(pet: InsertPet): Promise<Pet>;
   updatePet(id: number, pet: Partial<InsertPet>): Promise<Pet>;
   deletePet(id: number): Promise<boolean>;
+
+  // Data initialization
+  getOrCreateHousehold(name: string): Promise<{ id: number }>;
+  getOrCreateUser(username: string, password: string, email: string, householdId: number): Promise<{ id: number }>;
+  getOrCreatePet(name: string, householdId: number): Promise<{ id: number }>;
+  getOrCreateDevice(deviceId: string, name: string, mode: string, householdId: number): Promise<{ id: number }>;
+  associatePetToDevice(petId: number, deviceId: number): Promise<void>;
 }
 
 // Exportamos la implementación de base de datos PostgreSQL

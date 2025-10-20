@@ -5,8 +5,8 @@
 .env
 
 # Image datasets in app_camara
-/apps/app_camara/data face human/
-/apps/app_camara/perro,gato,humano/
+/apps/app_camara/
+
 
 # Log files
 *.log
@@ -22,3 +22,6 @@ temp_script.py
 # Media and archive files
 *.mp4
 *.zip
+
+# Ignored projects
+/apps/kittypaw-landing/

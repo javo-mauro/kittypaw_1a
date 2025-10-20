@@ -1,5 +1,6 @@
-import { pgTable, text, serial, integer, timestamp, date, real, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, date, real, pgEnum, boolean } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import { createInsertSchema } from 'drizzle-zod';
 
 // --- ENUMS ---
 export const userRoleEnum = pgEnum('user_role', ['owner', 'carer']);
@@ -19,9 +20,11 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   householdId: integer("household_id").notNull().references(() => households.id, { onDelete: 'cascade' }),
   name: text("name").notNull(),
+  username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
+  password: text("password").notNull(),
   role: userRoleEnum("role").notNull().default('carer'),
+  lastLogin: timestamp("last_login"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -43,13 +46,16 @@ export const devices = pgTable("devices", {
   deviceId: text("device_id").notNull().unique(), // ID físico del QR
   name: text("name").notNull(), // Apodo del dispositivo
   mode: deviceModeEnum("mode").notNull(),
+  status: text("status").notNull().default('offline'),
 });
 
-// Nueva tabla de unión para la relación Muchos-a-Muchos
+// Nueva tabla de unión para la relación Muchos-a-Muchos con PK compuesta
 export const petsToDevices = pgTable("pets_to_devices", {
     petId: integer("pet_id").notNull().references(() => pets.id, { onDelete: 'cascade' }),
     deviceId: integer("device_id").notNull().references(() => devices.id, { onDelete: 'cascade' }),
-});
+}, table => ({
+    primaryKey: ["petId", "deviceId"],
+}));
 
 // Eventos de consumo, sin cambios estructurales
 export const consumptionEvents = pgTable("consumption_events", {
@@ -70,7 +76,21 @@ export const deviceHealthReports = pgTable("device_health_reports", {
   overallStatus: text("overall_status").notNull(), // 'PASS' o 'FAIL'
 });
 
-// --- DEFINICIÓN DE RELACIONES ---
+export const mqttConnections = pgTable("mqtt_connections", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  brokerUrl: text("broker_url").notNull(),
+  clientId: text("client_id").notNull(),
+  username: text("username"),
+  password: text("password"),
+  caCert: text("ca_cert"),
+  clientCert: text("client_cert"),
+  privateKey: text("private_key"),
+  connected: boolean("connected").default(false).notNull(),
+  lastConnected: timestamp("last_connected"),
+});
+
+// --- RELACIONES ---
 
 export const householdsRelations = relations(households, ({ many }) => ({
   users: many(users),
@@ -78,11 +98,12 @@ export const householdsRelations = relations(households, ({ many }) => ({
   devices: many(devices),
 }));
 
-export const usersRelations = relations(users, ({ one }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
   household: one(households, {
     fields: [users.householdId],
     references: [households.id],
   }),
+  mqttConnections: many(mqttConnections),
 }));
 
 export const petsRelations = relations(pets, ({ one, many }) => ({
@@ -121,3 +142,20 @@ export const deviceHealthReportsRelations = relations(deviceHealthReports, ({ on
     references: [devices.id],
   }),
 }));
+
+export const mqttConnectionsRelations = relations(mqttConnections, ({ one }) => ({
+  user: one(users, {
+    fields: [mqttConnections.userId],
+    references: [users.id],
+  }),
+}));
+
+// --- ZOD SCHEMAS ---
+export const insertHouseholdSchema = createInsertSchema(households);
+export const insertUserSchema = createInsertSchema(users);
+export const insertPetSchema = createInsertSchema(pets);
+export const insertDeviceSchema = createInsertSchema(devices);
+export const insertPetToDeviceSchema = createInsertSchema(petsToDevices);
+export const insertConsumptionEventSchema = createInsertSchema(consumptionEvents);
+export const insertDeviceHealthReportSchema = createInsertSchema(deviceHealthReports);
+export const insertMqttConnectionSchema = createInsertSchema(mqttConnections);

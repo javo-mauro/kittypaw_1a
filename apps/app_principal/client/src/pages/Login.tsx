@@ -43,8 +43,8 @@ export default function Login() {
   const form = useForm<z.infer<typeof loginFormSchema>>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
-      username: '',
-      password: '',
+      username: 'mauro',
+      password: '123456',
     },
   });
 
@@ -97,6 +97,11 @@ export default function Login() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="border-l-4 border-yellow-400 bg-yellow-50 p-4 rounded-md">
+                <h4 className="font-semibold">Cuenta de Prueba</h4>
+                <p className="text-sm">Usuario: mauro</p>
+                <p className="text-sm">Contraseña: 123456</p>
+              </div>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField

@@ -1,10 +1,18 @@
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { mqttClient } from "./mqtt";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Enable CORS for the frontend origin
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true,
+}));
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -36,7 +44,26 @@ app.use((req, res, next) => {
   next();
 });
 
+import { storage } from "./storage";
+
 (async () => {
+  // Data initialization
+  try {
+    log("Initializing test data...");
+    const household = await storage.getOrCreateHousehold("Casa de Prueba");
+    const user = await storage.getOrCreateUser("mauro", "123456", "mauro@kittypaw.com", household.id);
+    console.log("User object after getOrCreateUser:", user);
+    const pet = await storage.getOrCreatePet("Mishifu", household.id);
+    const device = await storage.getOrCreateDevice("KPCL0022", "Comedero de Mishifu", "comedero", household.id);
+    await storage.associatePetToDevice(pet.id, device.id);
+    
+    // Load and connect MQTT with the test user's ID
+    await mqttClient.loadAndConnect(user.id);
+    log("Test data initialized successfully.");
+  } catch (error) {
+    log(`Error initializing test data: ${error.stack}`, "error");
+  }
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

@@ -1,5 +1,3 @@
-import type { Express, Request, Response, Router } from "express";
-import { createServer, type Server } from "http";
 import express, { type Express, type Request, type Response, type Router } from "express";
 import { createServer, type Server as HttpServer } from "http";
 import { storage } from "./storage";
@@ -17,13 +15,11 @@ import { log } from "./vite";
 // Handles initial setup and regular data generation when no real MQTT data is available
 let dataGenerationInterval: NodeJS.Timeout | null = null;
 
-export async function registerRoutes(app: Express): Promise<Server> {
 export async function registerRoutes(app: Express): Promise<HttpServer> {
   const httpServer = createServer(app);
   const apiRouter: Router = express.Router();
 
   // Setup WebSocket server
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   const wss = new WebSocketServer({ noServer: true });
 
   wss.on('connection', (ws: WebSocket) => {
@@ -71,7 +67,6 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
 
   // API routes
   // Endpoint para inicio de sesión
-  app.post('/api/auth/login', async (req: Request, res: Response) => {
   apiRouter.post('/auth/login', async (req: Request, res: Response) => {
     try {
       const { username, password } = req.body;
@@ -82,52 +77,20 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
         return res.status(400).json({ message: 'Se requiere nombre de usuario y contraseña' });
       }
       
-      // Intentar buscar primero como usuario regular
-      let user = await storage.getUserByUsername(username);
-      console.log(`Usuario regular encontrado: ${user ? 'Sí' : 'No'}`);
+      const user = await storage.getUserByUsername(username);
       
-      // Si no se encuentra como usuario regular, buscar como propietario de mascota
-      if (!user) {
-        console.log(`Buscando como propietario de mascota: ${username}`);
-        const petOwner = await storage.getPetOwnerByUsername(username);
-        console.log(`Propietario encontrado: ${petOwner ? 'Sí' : 'No'}`);
-        
-        if (petOwner) {
-          console.log(`Detalles del propietario: ${JSON.stringify(petOwner)}`);
-        }
-        
-        // Si es un propietario de mascota, crear un objeto de usuario compatible
-        if (petOwner) {
-          user = {
-            id: petOwner.id,
-            username: petOwner.username,
-            password: petOwner.password,
-            name: `${petOwner.name} ${petOwner.paternalLastName}`,
-            role: 'owner',
-            lastLogin: new Date()
-          };
-          console.log(`Usuario creado desde propietario: ${JSON.stringify(user)}`);
-        }
-      }
-      
-      // Si no se encontró el usuario en ninguna de las dos formas
       if (!user) {
         console.log(`Usuario no encontrado: ${username}`);
         return res.status(401).json({ message: 'Credenciales inválidas' });
       }
       
-      // Verificar contraseña (en una aplicación real usaríamos bcrypt)
       if (user.password !== password) {
         console.log(`Contraseña incorrecta para: ${username}`);
         return res.status(401).json({ message: 'Credenciales inválidas' });
       }
       
-      // Si es un usuario regular, actualizar último login
-      if (await storage.getUser(user.id)) {
-        await storage.updateUserLastLogin(user.id);
-      }
+      await storage.updateUserLastLogin(user.id);
       
-      // Enviar usuario sin información sensible
       const { password: _, ...safeUser } = user;
       
       res.json({
@@ -140,16 +103,16 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     }
   });
   
-  app.post('/api/auth/logout', async (req: Request, res: Response) => {
+  // TODO: Implement actual session invalidation for production.
   apiRouter.post('/auth/logout', async (req: Request, res: Response) => {
     // En una aplicación real, aquí invalidaríamos la sesión
     res.json({ success: true, message: 'Sesión cerrada exitosamente' });
   });
   
-  app.get('/api/user/current', async (req: Request, res: Response) => {
   apiRouter.get('/user/current', async (req: Request, res: Response) => {
     // En un sistema real, obtendríamos el ID del usuario de la sesión
     // Por ahora, usamos el ID proporcionado en la solicitud, o el usuario 1 por defecto
+    // TODO: Replace hardcoded userId with dynamic user identification from session/authentication for production.
     const userId = parseInt(req.query.userId as string) || 1;
     const user = await storage.getUser(userId);
     
@@ -162,7 +125,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     }
   });
   
-  app.get('/api/users', async (req: Request, res: Response) => {
+  // TODO: Replace with actual database interaction for production.
   apiRouter.get('/users', async (req: Request, res: Response) => {
     try {
       // Obtener todos los usuarios del sistema desde el storage
@@ -179,7 +142,6 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     }
   });
 
-  app.post('/api/auth/switch-user', async (req: Request, res: Response) => {
   apiRouter.post('/auth/switch-user', async (req: Request, res: Response) => {
     try {
       const { username } = req.body;
@@ -205,6 +167,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
           };
           await storage.createDevice(device);
           
+          /*
           // Generar algunos datos de sensores para este dispositivo
           const sensorTypes = ['temperature', 'humidity', 'activity', 'weight'];
           const now = new Date();
@@ -242,6 +205,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
               });
             }
           }
+          */
         }
 
         let role = 'owner';
@@ -271,7 +235,6 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     }
   });
 
-  app.get('/api/devices', async (req: Request, res: Response) => {
   apiRouter.get('/devices', async (req: Request, res: Response) => {
     try {
       // Verificar si se solicitan dispositivos para un usuario específico
@@ -298,24 +261,10 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
       else if (username === 'jdayne' || userId === 2) {
         filteredDevices = allDevices;
       }
-      // Para otros usuarios, filtrar según las mascotas que tengan asociadas
+      // TODO: Refactor device filtering for other users based on household and petsToDevices.
+      // The previous logic using storage.getPetsByOwnerId is obsolete.
       else if (userId) {
-        // Obtener las mascotas del usuario
-        const ownerPets = await storage.getPetsByOwnerId(userId);
-        
-        // Filtrar dispositivos que estén asociados con las mascotas del propietario
-        if (ownerPets.length > 0) {
-          const petDeviceIds = ownerPets
-            .filter(pet => pet.kittyPawDeviceId)
-            .map(pet => pet.kittyPawDeviceId);
-          
-          filteredDevices = allDevices.filter(device => 
-            petDeviceIds.includes(device.deviceId)
-          );
-        } else {
-          // Si el propietario no tiene mascotas, no mostrar dispositivos
-          filteredDevices = [];
-        }
+        filteredDevices = []; // Placeholder: No devices shown until refactored.
       }
       
       res.json(filteredDevices);
@@ -325,7 +274,6 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     }
   });
 
-  app.post('/api/devices', async (req: Request, res: Response) => {
   apiRouter.post('/devices', async (req: Request, res: Response) => {
     try {
       const deviceData = insertDeviceSchema.parse(req.body);
@@ -347,7 +295,6 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     }
   });
 
-  app.get('/api/devices/:deviceId', async (req: Request, res: Response) => {
   apiRouter.get('/devices/:deviceId', async (req: Request, res: Response) => {
     const device = await storage.getDeviceByDeviceId(req.params.deviceId);
     if (device) {
@@ -357,7 +304,30 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     }
   });
 
-  app.get('/api/sensor-data/:deviceId', async (req: Request, res: Response) => {
+  apiRouter.post('/devices/:deviceId/command', async (req: Request, res: Response) => {
+    try {
+      const { deviceId } = req.params;
+      const command = req.body;
+
+      if (!deviceId || !command || Object.keys(command).length === 0) {
+        return res.status(400).json({ error: "Device ID and command body are required" });
+      }
+
+      const topic = `${deviceId}/sub`;
+      const success = mqttClient.publish(topic, command);
+
+      if (success) {
+        log(`Command sent to ${topic}: ${JSON.stringify(command)}`, 'express');
+        res.json({ success: true, message: `Command sent to device ${deviceId}` });
+      } else {
+        res.status(500).json({ error: `Failed to send command to device ${deviceId}` });
+      }
+    } catch (error) {
+      console.error("Error sending command:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   apiRouter.get('/sensor-data/:deviceId', async (req: Request, res: Response) => {
     const { deviceId } = req.params;
     const { type, limit } = req.query;
@@ -379,19 +349,18 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     res.json(data);
   });
 
-  app.get('/api/latest-readings', async (req: Request, res: Response) => {
   apiRouter.get('/latest-readings', async (req: Request, res: Response) => {
     const readings = await storage.getLatestReadings();
     res.json(readings);
   });
 
-  app.get('/api/system/metrics', async (req: Request, res: Response) => {
   apiRouter.get('/system/metrics', async (req: Request, res: Response) => {
     const metrics = await storage.getSystemMetrics();
     res.json(metrics);
   });
 
-  app.get('/api/system/info', async (req: Request, res: Response) => {
+  // TODO: Replace with actual dynamic system information for production.
+  apiRouter.get('/system/info', async (req: Request, res: Response) => {
     res.json({
       version: "v2.1.0",
       mqttVersion: "v1.4.3",
@@ -399,8 +368,8 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     });
   });
 
-  app.get('/api/mqtt/status', async (req: Request, res: Response) => {
   apiRouter.get('/mqtt/status', async (req: Request, res: Response) => {
+    // TODO: Replace hardcoded userId with dynamic user identification from session/authentication for production.
     const connection = await storage.getMqttConnectionByUserId(1);
     if (connection) {
       // Don't send password or certificate information in the response
@@ -420,7 +389,6 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     }
   });
 
-  app.post('/api/mqtt/connect', async (req: Request, res: Response) => {
   apiRouter.post('/mqtt/connect', async (req: Request, res: Response) => {
     try {
       const connectionData = insertMqttConnectionSchema.parse(req.body);
@@ -458,85 +426,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     }
   });
 
-  // Pet owner endpoints
-  app.get('/api/pet-owners', async (req: Request, res: Response) => {
-  apiRouter.get('/pet-owners', async (req: Request, res: Response) => {
-    try {
-      const owners = await storage.getPetOwners();
-      res.json(owners);
-    } catch (error) {
-      console.error('Error fetching pet owners:', error);
-      res.status(500).json({ message: 'Error al obtener los dueños de mascotas' });
-    }
-  });
-
-  app.get('/api/pet-owners/:id', async (req: Request, res: Response) => {
-  apiRouter.get('/pet-owners/:id', async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      const owner = await storage.getPetOwner(id);
-      
-      if (!owner) {
-        return res.status(404).json({ message: 'Dueño no encontrado' });
-      }
-      
-      res.json(owner);
-    } catch (error) {
-      console.error('Error fetching pet owner:', error);
-      res.status(500).json({ message: 'Error al obtener el dueño de mascota' });
-    }
-  });
-
-  app.post('/api/pet-owners', async (req: Request, res: Response) => {
-  apiRouter.post('/pet-owners', async (req: Request, res: Response) => {
-    try {
-      const owner = req.body;
-      console.log("Datos recibidos del cliente:", owner);
-      const newOwner = await storage.createPetOwner(owner);
-      console.log("Nuevo dueño creado:", newOwner);
-      
-      // Asegurarse de que estamos enviando los encabezados correctos
-      res.setHeader('Content-Type', 'application/json');
-      res.status(201).json(newOwner);
-      console.log("Respuesta enviada al cliente:", JSON.stringify(newOwner));
-    } catch (error) {
-      console.error('Error creating pet owner:', error);
-      res.status(500).json({ message: 'Error al crear el dueño de mascota' });
-    }
-  });
-
-  app.put('/api/pet-owners/:id', async (req: Request, res: Response) => {
-  apiRouter.put('/pet-owners/:id', async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      const owner = req.body;
-      const updatedOwner = await storage.updatePetOwner(id, owner);
-      res.json(updatedOwner);
-    } catch (error) {
-      console.error('Error updating pet owner:', error);
-      res.status(500).json({ message: 'Error al actualizar el dueño de mascota' });
-    }
-  });
-
-  app.delete('/api/pet-owners/:id', async (req: Request, res: Response) => {
-  apiRouter.delete('/pet-owners/:id', async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      const result = await storage.deletePetOwner(id);
-      
-      if (!result) {
-        return res.status(404).json({ message: 'Dueño no encontrado' });
-      }
-      
-      res.json({ message: 'Dueño eliminado con éxito' });
-    } catch (error) {
-      console.error('Error deleting pet owner:', error);
-      res.status(500).json({ message: 'Error al eliminar el dueño de mascota' });
-    }
-  });
-
   // --- Rutas para Mascotas (Pet) ---
-  const petRouter: Router = app.loopback.Router();
   const petRouter: Router = express.Router();
 
   petRouter.get('/', async (req: Request, res: Response) => {
@@ -606,10 +496,8 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     }
   });
 
-  app.use('/api/pets', petRouter);
   apiRouter.use('/pets', petRouter);
 
-  app.get('/api/devices/:deviceId/pet', async (req: Request, res: Response) => {
   apiRouter.get('/devices/:deviceId/pet', async (req: Request, res: Response) => {
     try {
       const deviceId = req.params.deviceId;
@@ -627,7 +515,6 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   });
 
   // Endpoint para suscribirse a un nuevo tópico MQTT
-  app.post('/api/mqtt/subscribe', async (req: Request, res: Response) => {
   apiRouter.post('/mqtt/subscribe', async (req: Request, res: Response) => {
     try {
       const { topic } = req.body;
@@ -645,7 +532,6 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   });
 
   // Endpoint para generar datos simulados para un dispositivo específico o todos los dispositivos
-  app.post('/api/simulate-data', async (req: Request, res: Response) => {
   apiRouter.post('/simulate-data', async (req: Request, res: Response) => {
     // La simulación de datos ha sido deshabilitada para usar solo datos reales del broker MQTT
     return res.status(403).json({ 
@@ -657,7 +543,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   app.use('/api', apiRouter);
 
   // Initialize the MQTT client
-  await mqttClient.loadAndConnect();
+  // await mqttClient.loadAndConnect(); // Removed duplicate call
   
   // Solo mantenemos la reconexión automática en caso de desconexión
   // y hemos eliminado toda generación de datos simulados
@@ -670,7 +556,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     // Verificar si el cliente MQTT está conectado
     if (!mqttClient.isConnected()) {
       log('Cliente MQTT desconectado. Reintentando conexión...', 'express');
-      mqttClient.loadAndConnect();
+      mqttClient.loadAndConnect(1);
     }
   }, 60000);
 

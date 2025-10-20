@@ -52,7 +52,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const wsUrl = `${protocol}//localhost:5000/ws`;
     
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
