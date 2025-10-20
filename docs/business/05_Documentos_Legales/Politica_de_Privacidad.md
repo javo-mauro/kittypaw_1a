@@ -1,6 +1,6 @@
 # Política de Privacidad de KittyPaw
 
-**Fecha de última actualización:** [Fecha]
+Fecha de última actualización: 20 de octubre de 2025
 
 Bienvenido a KittyPaw. Tu privacidad y la de tu mascota son de suma importancia para nosotros. Esta Política de Privacidad explica qué información recopilamos, cómo la usamos y protegemos.
 

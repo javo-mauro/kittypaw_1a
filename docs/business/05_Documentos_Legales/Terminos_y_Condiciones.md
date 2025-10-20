@@ -1,6 +1,6 @@
 # Términos y Condiciones de Uso de KittyPaw
 
-**Fecha de última actualización:** [Fecha]
+Fecha de última actualización: 20 de octubre de 2025
 
 Estos Términos y Condiciones ("Términos") rigen tu acceso y uso del servicio KittyPaw, incluyendo el dispositivo de hardware ("Dispositivo") y el software de la aplicación ("Software"). Al usar nuestro Servicio, aceptas estos Términos en su totalidad.
 

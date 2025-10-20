@@ -6,22 +6,22 @@ Este documento contiene la declaración de la misión, la visión y el "elevator
 
 ## Misión
 
-*(Borrador para ser refinado)*
-
-Nuestra misión es mejorar la calidad de vida de las mascotas y dar tranquilidad a sus dueños a través de tecnología inteligente y no invasiva, permitiendo un monitoreo de salud proactivo y una conexión más profunda entre humanos y animales.
+Nuestra misión es liderar la transformación del cuidado de mascotas a nivel global, desarrollando tecnología IoT y IA innovadora que permita un monitoreo de salud proactivo y predictivo, empoderando a los dueños y profesionales veterinarios para asegurar una vida más larga y saludable para los animales de compañía.
 
 ---
 
 ## Visión
 
-*(Borrador para ser refinado)*
-
-Convertirnos en la plataforma líder en el ecosistema del "Pet Tech" en Latinoamérica, creando un estándar de cuidado preventivo para mascotas basado en datos y análisis predictivo, transformando la forma en que los dueños y veterinarios cuidan de la salud animal.
+Ser la plataforma global de referencia en 'Pet Tech', reconocida por nuestra innovación en IoT e IA, estableciendo un nuevo estándar de cuidado preventivo y predictivo que revolucione la salud y el bienestar animal a escala mundial.
 
 ---
 
-## Elevator Pitch (Discurso de 30 segundos)
+## Elevator Pitch (Discurso de 30 segundos - Enfoque CORFO Semilla Inicia)
 
-*(Borrador para ser refinado)*
+"En un mercado global de 'Pet Tech' en auge, KittyPaw emerge como una solución disruptiva. Hemos desarrollado un innovador dispositivo IoT con IA integrada que, discretamente en el collar de tu mascota, no solo monitorea datos vitales en tiempo real, sino que predice proactivamente problemas de salud. Esto no solo ofrece tranquilidad a los dueños, sino que posiciona a KittyPaw para escalar globalmente, transformando el cuidado preventivo animal y generando un impacto significativo en la industria."
 
-"¿Sabías que nuestras mascotas a menudo ocultan sus problemas de salud hasta que es demasiado tarde? KittyPaw es una plataforma de monitoreo inteligente que, a través de un simple dispositivo en el collar de tu mascota, recopila datos vitales como su actividad, temperatura y patrones de alimentación. Nuestra aplicación analiza esta información en tiempo real para darte tranquilidad y alertarte tempranamente sobre posibles problemas de salud, permitiéndote actuar a tiempo y ofreciéndole a tu compañero una vida más larga y saludable."
+---
+
+## Elevator Pitch (Discurso de 30 segundos - Enfoque SERCOTEC Capital Semilla Emprende)
+
+"¿Buscas una oportunidad de negocio sólida y con impacto local? KittyPaw es una innovadora solución de monitoreo de mascotas que combina un dispositivo inteligente con una plataforma de análisis. No solo resolvemos una necesidad real de los dueños de mascotas en la Región Metropolitana, sino que generamos valor a través de un modelo de suscripción recurrente y creamos empleos en desarrollo tecnológico y soporte. Con KittyPaw, invertimos en el bienestar animal y en el crecimiento económico de nuestra región."
