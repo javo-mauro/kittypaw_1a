@@ -1,3 +1,7 @@
+# PlatformIO
+.pio/
+.vscode/
+
 # Dependencies
 /node_modules
 
