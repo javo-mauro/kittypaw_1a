@@ -5,8 +5,8 @@
 .env
 
 # Image datasets in app_camara
-/apps/app_camara/data face human/
-/apps/app_camara/perro,gato,humano/
+/apps/app_camara/
+
 
 # Log files
 *.log

@@ -14,6 +14,8 @@ Este documento es el tablero de control de tareas activas. Reemplaza al Roadmap 
 
 ## 🚀 Tareas Priorizadas (To Do)
 
+*   `[Backend/AWS]` **Solucionar error de conexión con AWS IoT Core:** El backend no puede conectarse al broker MQTT. Revisar certificados, políticas y endpoint en la consola de AWS. Ver resumen en 'docs/dev_notes/DEBUGGING_AWS_IOT_CONNECTION_SUMMARY.md'. **[Owner: Mauro]** **[Priority: Blocker]**
+*   `[Backend]` **Solucionar error de autenticación de la base de datos:** El servidor de backend no puede conectarse a la base de datos PostgreSQL debido a un error de autenticación persistente. Ver resumen en 'docs/dev_notes/DEBUGGING_DB_CONNECTION_SUMMARY.md'. **[Owner: Mauro]** **[Priority: Blocker]**
 *   `[IoT/Backend]` Unificar la configuración del broker MQTT entre el firmware y el backend. **[Owner: Mauro]**
 *   `[Frontend]` Conectar el Dashboard al WebSocket para mostrar datos en tiempo real. **[Owner: Mauro]**
 *   `[Firmware]` Configurar el proyecto en PlatformIO con las librerías necesarias. **[Owner: Javier]**
