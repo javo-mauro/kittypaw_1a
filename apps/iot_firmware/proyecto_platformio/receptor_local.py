@@ -6,6 +6,7 @@ BROKER_IP = "127.0.0.1"  # Escuchar en la maquina local
 BROKER_PORT = 1883
 TOPIC_EVENTS = "kittypaw/events"
 TOPIC_REPORTS = "kittypaw/reports/health"
+TOPIC_TELEMETRY = "KPCL0022/pub"
 OUTPUT_FILE = "datos_sensores.txt"
 
 # --- Funciones ---
@@ -14,8 +15,8 @@ def on_connect(client, userdata, flags, rc):
     """Callback que se ejecuta al conectar al broker."""
     if rc == 0:
         print(f"Conectado exitosamente al broker en {BROKER_IP}")
-        client.subscribe([(TOPIC_EVENTS, 0), (TOPIC_REPORTS, 0)])
-        print(f"Suscrito a los temas: '{TOPIC_EVENTS}' y '{TOPIC_REPORTS}'")
+        client.subscribe([(TOPIC_EVENTS, 0), (TOPIC_REPORTS, 0), (TOPIC_TELEMETRY, 0)])
+        print(f"Suscrito a los temas: '{TOPIC_EVENTS}', '{TOPIC_REPORTS}' y '{TOPIC_TELEMETRY}'")
     else:
         print(f"Fallo al conectar, codigo de error: {rc}")
 
