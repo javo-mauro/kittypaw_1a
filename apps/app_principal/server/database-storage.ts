@@ -17,7 +17,8 @@ import {
   type SensorReading,
   type SystemMetrics,
   type MqttConnection,
-  type InsertMqttConnection
+  type InsertMqttConnection,
+  deviceModeEnum,
 } from "@shared/schema";
 import { db } from './db';
 import { eq, desc, sql, and, isNull, asc, gt } from 'drizzle-orm';
@@ -39,6 +40,10 @@ export class DatabaseStorage implements IStorage {
   async getUserByUsername(username: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
+  }
+
+  async getUsers(): Promise<User[]> {
+    return db.select().from(users);
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -115,7 +120,7 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
 
-  async createConsumptionEvent(data: InsertConsumptionEvent): Promise<ConsumptionEvent> {
+  async createConsumptionEvent(data: Omit<InsertConsumptionEvent, 'id' | 'timestamp'>): Promise<ConsumptionEvent> {
     const [newEvent] = await db.insert(consumptionEvents)
       .values({
         ...data,
@@ -137,7 +142,7 @@ export class DatabaseStorage implements IStorage {
       .from(consumptionEvents)
       .orderBy(consumptionEvents.deviceId, desc(consumptionEvents.timestamp));
 
-    return result as SensorReading[];
+    return result as unknown as SensorReading[];
   }
 
   async getSensorData(deviceId: string, limit?: number): Promise<SensorReading[]> {
@@ -183,6 +188,18 @@ export class DatabaseStorage implements IStorage {
     return query as unknown as Promise<SensorReading[]>;
   }
 
+  async createSensorData(data: { deviceId: string; sensorType: string; data: { value: number; unit: string; }; }): Promise<any> {
+    // This is a placeholder implementation. In a real scenario, you would have a separate table for generic sensor data.
+    if (data.sensorType === 'weight') {
+      return this.createConsumptionEvent({
+        deviceId: parseInt(data.deviceId),
+        amountGrams: data.data.value,
+        durationSeconds: 0, // Assuming 0 duration for weight readings
+      });
+    }
+    return Promise.resolve();
+  }
+
   // MQTT connection operations
   async getMqttConnection(id: number): Promise<MqttConnection | undefined> {
     const [connection] = await db.select().from(mqttConnections).where(eq(mqttConnections.id, id));
@@ -219,7 +236,7 @@ export class DatabaseStorage implements IStorage {
   // System operations
   async getSystemMetrics(): Promise<SystemMetrics> {
     // Contar dispositivos activos (con estado "online")
-    const activeDevicesResult = await db.execute(sql.raw(`SELECT COUNT(*) as count FROM devices WHERE status = 'online'`));
+    const activeDevicesResult = await db.select({count: sql<number>`count(*)`}).from(devices).where(eq(devices.status, 'online'));
     
     // Contar dispositivos que han enviado datos en los últimos 15 minutos
     const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
@@ -240,8 +257,6 @@ export class DatabaseStorage implements IStorage {
     };
   }
   
-
-  
   // Pet operations
   async getPets(): Promise<Pet[]> {
     return db.select().from(pets);
@@ -253,8 +268,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(pets.householdId, householdId));
   }
   
-
-  
   async getPet(id: number): Promise<Pet | undefined> {
     const [pet] = await db.select().from(pets).where(eq(pets.id, id));
     return pet;
@@ -264,25 +277,26 @@ export class DatabaseStorage implements IStorage {
     const [pet] = await db.select().from(pets).where(eq(pets.chipNumber, chipNumber));
     return pet;
   }
+
+  async getPetByKittyPawDeviceId(deviceId: string): Promise<Pet | undefined> {
+    const [result] = await db.select({ pet: pets })
+      .from(pets)
+      .leftJoin(petsToDevices, eq(pets.id, petsToDevices.petId))
+      .leftJoin(devices, eq(petsToDevices.deviceId, devices.id))
+      .where(eq(devices.deviceId, deviceId));
+    return result?.pet;
+  }
   
   async createPet(pet: InsertPet): Promise<Pet> {
-    const now = new Date();
     const [newPet] = await db.insert(pets)
-      .values({
-        ...pet,
-        createdAt: now,
-        updatedAt: now
-      })
+      .values(pet)
       .returning();
     return newPet;
   }
   
   async updatePet(id: number, pet: Partial<InsertPet>): Promise<Pet> {
     const [updatedPet] = await db.update(pets)
-      .set({
-        ...pet,
-        updatedAt: new Date()
-      })
+      .set(pet)
       .where(eq(pets.id, id))
       .returning();
     return updatedPet;
@@ -332,7 +346,7 @@ export class DatabaseStorage implements IStorage {
     if (device) {
       return device;
     }
-    const [newDevice] = await db.insert(devices).values({ deviceId, name, mode, householdId }).returning();
+    const [newDevice] = await db.insert(devices).values({ deviceId, name, mode: mode as "comedero" | "bebedero" | "collar" | "cama_inteligente", householdId }).returning();
     return newDevice;
   }
 
@@ -340,6 +354,6 @@ export class DatabaseStorage implements IStorage {
     const [association] = await db.select().from(petsToDevices).where(and(eq(petsToDevices.petId, petId), eq(petsToDevices.deviceId, deviceId)));
     if (!association) {
       await db.insert(petsToDevices).values({ petId, deviceId });
-        }
-      }
     }
+  }
+}

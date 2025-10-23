@@ -35,8 +35,7 @@ export default function DeviceList() {
   
   const filteredDevices = devices.filter(device => 
     device.deviceId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    device.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    device.type.toLowerCase().includes(searchQuery.toLowerCase())
+    device.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
   const handleAddDevice = () => {
@@ -75,7 +74,6 @@ export default function DeviceList() {
           <thead>
             <tr className="bg-neutral-50">
               <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Device ID</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Type</th>
               <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
               <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Last Update</th>
               <th className="py-3 px-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Battery</th>
@@ -85,7 +83,7 @@ export default function DeviceList() {
           <tbody className="divide-y divide-neutral-100">
             {filteredDevices.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-4 text-center text-neutral-500">
+                <td colSpan={5} className="px-4 py-4 text-center text-neutral-500">
                   No devices found
                 </td>
               </tr>
@@ -100,12 +98,8 @@ export default function DeviceList() {
                       <div>
                         <div className="font-medium text-neutral-700">{getDeviceDisplayName(device.deviceId)}</div>
                         <div className="text-xs text-neutral-500">{device.deviceId}</div>
-                        <div className="text-xs text-neutral-500 font-mono">{device.ipAddress}</div>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="text-sm">{device.type}</span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <StatusBadge status={device.status} />

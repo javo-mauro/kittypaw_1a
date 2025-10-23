@@ -96,7 +96,7 @@ class MqttClient {
 
       return true;
     } catch (error) {
-      log(`Failed to connect to MQTT broker: ${error}`, 'mqtt');
+      log(`Failed to connect to MQTT broker: ${(error as Error).message}`, 'mqtt');
       return false;
     }
   }
@@ -263,9 +263,11 @@ class MqttClient {
           device = await storage.createDevice({
             deviceId,
             name: `Kitty Paw Device ${deviceId}`,
-            type: 'KittyPaw',
+            mode: 'collar',
+            householdId: 1, // Default household for now
             status: deviceStatus,
-            batteryLevel: 100
+            batteryLevel: 100,
+            lastUpdate: new Date(),
           });
         } else {
           // Si el dispositivo existe, verificamos si el estado cambió antes de notificar
@@ -320,10 +322,10 @@ class MqttClient {
             timestamp: kpcData.timestamp
           };
           
-          const sensorData = await storage.createSensorData({
-            deviceId,
-            sensorType: 'temperature',
-            data: tempData
+          const sensorData = await storage.createConsumptionEvent({
+            deviceId: device.id,
+            amountGrams: tempData.value,
+            durationSeconds: 0,
           });
           
           this.broadcastToClients({
@@ -343,10 +345,10 @@ class MqttClient {
             timestamp: kpcData.timestamp
           };
           
-          const sensorData = await storage.createSensorData({
-            deviceId,
-            sensorType: 'humidity',
-            data: humidityData
+          const sensorData = await storage.createConsumptionEvent({
+            deviceId: device.id,
+            amountGrams: humidityData.value,
+            durationSeconds: 0,
           });
           
           this.broadcastToClients({
@@ -366,10 +368,10 @@ class MqttClient {
             timestamp: kpcData.timestamp
           };
           
-          const sensorData = await storage.createSensorData({
-            deviceId,
-            sensorType: 'light',
-            data: lightData
+          const sensorData = await storage.createConsumptionEvent({
+            deviceId: device.id,
+            amountGrams: lightData.value,
+            durationSeconds: 0,
           });
           
           this.broadcastToClients({
@@ -389,10 +391,10 @@ class MqttClient {
             timestamp: kpcData.timestamp
           };
           
-          const sensorData = await storage.createSensorData({
-            deviceId,
-            sensorType: 'weight',
-            data: weightData
+          const sensorData = await storage.createConsumptionEvent({
+            deviceId: device.id,
+            amountGrams: weightData.value,
+            durationSeconds: 0,
           });
           
           this.broadcastToClients({
@@ -411,10 +413,10 @@ class MqttClient {
           metrics
         });
       } catch (error) {
-        log(`Error processing MQTT message on topic ${topic}: ${error}`, 'mqtt');
+        log(`Error processing MQTT message on topic ${topic}: ${(error as Error).message}`, 'mqtt');
       }
     } catch (error) {
-      log(`Error handling MQTT message: ${error}`, 'mqtt');
+      log(`Error handling MQTT message: ${(error as Error).message}`, 'mqtt');
     }
   }
 
@@ -458,7 +460,6 @@ class MqttClient {
       if (!user) {
         throw new Error(`User with ID ${userId} not found.`);
       }
-      const householdId = user.householdId;
 
       // Obtener la configuración de AWS IoT Core desde las variables de entorno
       const awsIotMqttHost = process.env.AWS_IOT_MQTT_HOST;
@@ -476,7 +477,14 @@ class MqttClient {
           connection = await storage.createMqttConnection({
             userId: userId,
             brokerUrl: defaultBrokerUrl, 
-            clientId: defaultClientId
+            clientId: defaultClientId,
+            username: '',
+            password: '',
+            caCert: '',
+            clientCert: '',
+            privateKey: '',
+            connected: false,
+            lastConnected: new Date(),
           });
         }
         this.connectionId = connection.id;
@@ -497,7 +505,14 @@ class MqttClient {
           connection = await storage.createMqttConnection({
             userId: userId,
             brokerUrl: brokerUrl, 
-            clientId: clientId
+            clientId: clientId,
+            username: '',
+            password: '',
+            caCert: '',
+            clientCert: '',
+            privateKey: '',
+            connected: false,
+            lastConnected: new Date(),
           });
         }
         this.connectionId = connection.id;
@@ -507,14 +522,15 @@ class MqttClient {
       // --- Device Initialization and Dynamic Topic Subscription ---
 
       // For prototyping, ensure default devices exist
-      const householdId = user.householdId; // Assuming user object is available from earlier in the function
-      let device1 = await storage.getDeviceByDeviceId('KPCL0021');
-      if (!device1) {
-        await storage.createDevice({ deviceId: 'KPCL0021', name: 'Collar de Malto', type: 'KittyPaw Collar', status: 'online', batteryLevel: 95, householdId: householdId, mode: 'collar' });
-      }
-      let device2 = await storage.getDeviceByDeviceId('KPCL0022');
-      if (!device2) {
-        await storage.createDevice({ deviceId: 'KPCL0022', name: 'Placa de Canela', type: 'KittyPaw Tracker', status: 'online', batteryLevel: 85, householdId: householdId, mode: 'collar' });
+      if (user.householdId) {
+        let device1 = await storage.getDeviceByDeviceId('KPCL0021');
+        if (!device1) {
+          await storage.createDevice({ deviceId: 'KPCL0021', name: 'Collar de Malto', status: 'online', batteryLevel: 95, householdId: user.householdId, mode: 'collar', lastUpdate: new Date() });
+        }
+        let device2 = await storage.getDeviceByDeviceId('KPCL0022');
+        if (!device2) {
+          await storage.createDevice({ deviceId: 'KPCL0022', name: 'Placa de Canela', status: 'online', batteryLevel: 85, householdId: user.householdId, mode: 'collar', lastUpdate: new Date() });
+        }
       }
 
       // Dynamically subscribe to topics for all devices in the database

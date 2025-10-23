@@ -61,7 +61,7 @@ export default function Sensors() {
                         </div>
                         <div>
                           <h3 className="font-medium">{device.deviceId}</h3>
-                          <p className="text-xs text-neutral-500">{device.type}</p>
+                          <p className="text-xs text-neutral-500">{device.mode}</p>
                         </div>
                       </div>
                       

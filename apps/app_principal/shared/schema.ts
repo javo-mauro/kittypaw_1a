@@ -1,5 +1,5 @@
 import { pgTable, text, serial, integer, timestamp, date, real, pgEnum, boolean } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, type InferSelectModel } from "drizzle-orm";
 import { createInsertSchema } from 'drizzle-zod';
 
 // --- ENUMS ---
@@ -37,6 +37,7 @@ export const pets = pgTable("pets", {
   breed: text("breed"),
   birthDate: date("birth_date"),
   avatarUrl: text("avatar_url"), // URL a la imagen de perfil
+  chipNumber: text("chip_number").unique(),
 });
 
 // Dispositivos, ahora pertenecen a un Hogar
@@ -47,6 +48,8 @@ export const devices = pgTable("devices", {
   name: text("name").notNull(), // Apodo del dispositivo
   mode: deviceModeEnum("mode").notNull(),
   status: text("status").notNull().default('offline'),
+  batteryLevel: integer("battery_level"),
+  lastUpdate: timestamp("last_update"),
 });
 
 // Nueva tabla de unión para la relación Muchos-a-Muchos con PK compuesta
@@ -54,7 +57,7 @@ export const petsToDevices = pgTable("pets_to_devices", {
     petId: integer("pet_id").notNull().references(() => pets.id, { onDelete: 'cascade' }),
     deviceId: integer("device_id").notNull().references(() => devices.id, { onDelete: 'cascade' }),
 }, table => ({
-    primaryKey: ["petId", "deviceId"],
+    primaryKey: [table.petId, table.deviceId],
 }));
 
 // Eventos de consumo, sin cambios estructurales
@@ -89,6 +92,40 @@ export const mqttConnections = pgTable("mqtt_connections", {
   connected: boolean("connected").default(false).notNull(),
   lastConnected: timestamp("last_connected"),
 });
+
+// --- TYPES ---
+export type User = InferSelectModel<typeof users>;
+export type InsertUser = InferSelectModel<typeof users>;
+export type Device = InferSelectModel<typeof devices>;
+export type InsertDevice = InferSelectModel<typeof devices>;
+export type Pet = InferSelectModel<typeof pets>;
+export type InsertPet = InferSelectModel<typeof pets>;
+export type ConsumptionEvent = InferSelectModel<typeof consumptionEvents>;
+export type InsertConsumptionEvent = InferSelectModel<typeof consumptionEvents>;
+export type MqttConnection = InferSelectModel<typeof mqttConnections>;
+export type InsertMqttConnection = InferSelectModel<typeof mqttConnections>;
+
+// Custom types that are not directly in the DB
+export type SensorReading = {
+  deviceId: string;
+  sensorType: string;
+  value: number;
+  unit: string;
+  timestamp: string;
+};
+
+export type SystemMetrics = {
+  activeDevices: number;
+  activeSensors: number;
+  alerts: number;
+  lastUpdate: string;
+};
+
+export type SystemInfo = {
+  version: string;
+  mqttVersion: string;
+  lastUpdate: string;
+};
 
 // --- RELACIONES ---
 

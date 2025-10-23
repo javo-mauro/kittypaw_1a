@@ -1,6 +1,6 @@
 import mqtt from 'mqtt';
-import { db } from '../db/drizzle';
-import { devices, deviceHealthReports } from '../../../shared/schema';
+import { db } from '../server/db';
+import { devices, deviceHealthReports } from './schema';
 import { eq } from 'drizzle-orm';
 
 const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtt://test.mosquitto.org';

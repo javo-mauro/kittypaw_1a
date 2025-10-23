@@ -2,9 +2,29 @@ import type { Device } from '@/services/api';
 import { Link } from 'wouter';
 
 // Iconos para los modos de dispositivo
-const DeviceIcon = ({ mode }: { mode: 'comedero' | 'bebedero' }) => {
-  const iconName = mode === 'comedero' ? 'restaurant' : 'water_drop';
-  const color = mode === 'comedero' ? 'text-orange-500' : 'text-blue-500';
+const DeviceIcon = ({ mode }: { mode: 'comedero' | 'bebedero' | 'collar' | 'cama_inteligente' }) => {
+  let iconName = 'help';
+  let color = 'text-gray-500';
+
+  switch (mode) {
+    case 'comedero':
+      iconName = 'restaurant';
+      color = 'text-orange-500';
+      break;
+    case 'bebedero':
+      iconName = 'water_drop';
+      color = 'text-blue-500';
+      break;
+    case 'collar':
+      iconName = 'pets';
+      color = 'text-green-500';
+      break;
+    case 'cama_inteligente':
+      iconName = 'king_bed';
+      color = 'text-purple-500';
+      break;
+  }
+
   return <span className={`material-icons text-4xl ${color}`}>{iconName}</span>;
 };
 

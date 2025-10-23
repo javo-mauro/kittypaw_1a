@@ -41,7 +41,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
           }));
         }
       } catch (error) {
-        log(`WebSocket message error: ${error}`, 'ws');
+        log(`WebSocket message error: ${(error as Error).message}`, 'ws');
       }
     });
 
@@ -129,12 +129,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   apiRouter.get('/users', async (req: Request, res: Response) => {
     try {
       // Obtener todos los usuarios del sistema desde el storage
-      // Ahora solo mostramos a Javier Dayne como administrador
-      const users = [
-        { id: 1, username: 'admin', name: 'Javier Dayne', role: 'admin', lastLogin: new Date().toISOString() },
-        { id: 2, username: 'jdayne', name: 'Javier Dayne', role: 'owner', lastLogin: new Date().toISOString() },
-      ];
-      
+      const users = await storage.getUsers();
       res.json(users);
     } catch (error) {
       console.error('Error getting users:', error);
@@ -149,82 +144,14 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
         return res.status(400).json({ message: 'Se requiere el nombre de usuario' });
       }
 
-      // Para este ejemplo, simulamos un cambio de usuario exitoso
-      // Solo permitimos cambiar entre admin y jdayne
-      if (username === 'admin' || username === 'jdayne') {
-        // Verificar si ya existe el dispositivo
-        const existingDevice = await storage.getDeviceByDeviceId('KPCL0021');
-        
-        if (!existingDevice) {
-          // Asociamos un dispositivo específico al usuario
-          const device = {
-            deviceId: 'KPCL0021',
-            name: 'KittyPaw de Malto',
-            type: 'KittyPaw Collar',
-            status: 'online',
-            batteryLevel: 78,
-            lastUpdate: new Date().toISOString()
-          };
-          await storage.createDevice(device);
-          
-          /*
-          // Generar algunos datos de sensores para este dispositivo
-          const sensorTypes = ['temperature', 'humidity', 'activity', 'weight'];
-          const now = new Date();
-          
-          for (let i = 0; i < 10; i++) {
-            const pastTime = new Date(now.getTime() - (i * 3600000)); // Horas atrás
-            
-            for (const type of sensorTypes) {
-              let value = 0;
-              let unit = '';
-              
-              switch (type) {
-                case 'temperature':
-                  value = 37 + (Math.random() * 2 - 1); // Entre 36 y 38
-                  unit = '°C';
-                  break;
-                case 'humidity':
-                  value = 45 + (Math.random() * 10); // Entre 45 y 55
-                  unit = '%';
-                  break;
-                case 'activity':
-                  value = Math.floor(Math.random() * 100); // Entre 0 y 100
-                  unit = 'mov/h';
-                  break;
-                case 'weight':
-                  value = 5 + (Math.random() * 0.5 - 0.25); // Entre 4.75 y 5.25
-                  unit = 'kg';
-                  break;
-              }
-              
-              await storage.createSensorData({
-                deviceId: 'KPCL0021',
-                sensorType: type,
-                data: { value, unit }
-              });
-            }
-          }
-          */
-        }
+      const user = await storage.getUserByUsername(username);
 
-        let role = 'owner';
-        let name = 'Javier Dayne';
-        if (username === 'admin') {
-          role = 'admin';
-        }
-
-        // Enviamos respuesta completa con toda la info del usuario
+      if (user) {
+        const { password, ...safeUser } = user;
         res.json({ 
           success: true, 
           message: `Has cambiado al usuario ${username}`,
-          user: { 
-            id: username === 'admin' ? 1 : 2,
-            username, 
-            name,
-            role, 
-            lastLogin: new Date().toISOString() 
-          }
+          user: safeUser
         });
       } else {
         res.status(404).json({ success: false, message: 'Usuario no encontrado' });
@@ -250,24 +177,19 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
         return;
       }
       
-      // Filtrar dispositivos según el usuario
-      let filteredDevices = allDevices;
-      
-      // Permitir que jdayne y admin vean todos los dispositivos
-      if (username === 'admin' || userId === 1) {
-        filteredDevices = allDevices; // El admin ve todos los dispositivos
+      let user;
+      if (username) {
+        user = await storage.getUserByUsername(username);
+      } else if (userId) {
+        user = await storage.getUser(userId);
       }
-      // Para usuario "jdayne" asegurar que vea ambos dispositivos
-      else if (username === 'jdayne' || userId === 2) {
-        filteredDevices = allDevices;
+
+      if (user && user.householdId) {
+        const userDevices = allDevices.filter(d => d.householdId === user.householdId);
+        res.json(userDevices);
+      } else {
+        res.json([]);
       }
-      // TODO: Refactor device filtering for other users based on household and petsToDevices.
-      // The previous logic using storage.getPetsByOwnerId is obsolete.
-      else if (userId) {
-        filteredDevices = []; // Placeholder: No devices shown until refactored.
-      }
-      
-      res.json(filteredDevices);
     } catch (error) {
       console.error('Error fetching devices:', error);
       res.status(500).json({ message: 'Error retrieving devices' });
@@ -596,6 +518,6 @@ async function sendInitialData(ws: WebSocket) {
       }
     }));
   } catch (error) {
-    log(`Error sending initial data: ${error}`, 'ws');
+    log(`Error sending initial data: ${(error as Error).message}`, 'ws');
   }
 }

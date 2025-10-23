@@ -197,7 +197,7 @@ export default function Users() {
                     >
                       <TableCell>{device.deviceId}</TableCell>
                       <TableCell>{device.name}</TableCell>
-                      <TableCell>{device.type}</TableCell>
+                      <TableCell>{device.mode}</TableCell>
                       <TableCell>
                         <Badge variant={device.status === "online" ? "success" : "secondary"}>
                           {device.status || "desconocido"}

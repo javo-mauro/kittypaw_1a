@@ -18,6 +18,7 @@ export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUserLastLogin(id: number): Promise<void>;
 
@@ -26,15 +27,16 @@ export interface IStorage {
   getDevice(id: number): Promise<Device | undefined>;
   getDeviceByDeviceId(deviceId: string): Promise<Device | undefined>;
   createDevice(device: InsertDevice): Promise<Device>;
-  updateDeviceStatus(deviceId: string, status: string): Promise<void>;
+  updateDeviceStatus(deviceId: string, updates: Record<string, any>): Promise<void>;
   updateDeviceBattery(deviceId: string, batteryLevel: number): Promise<void>;
 
   // Consumption events operations
   getConsumptionEvents(deviceId: number, limit?: number): Promise<ConsumptionEvent[]>;
-  createConsumptionEvent(data: InsertConsumptionEvent): Promise<ConsumptionEvent>;
+  createConsumptionEvent(data: Omit<InsertConsumptionEvent, 'id' | 'timestamp'>): Promise<ConsumptionEvent>;
   getLatestReadings(): Promise<SensorReading[]>;
   getSensorData(deviceId: string, limit?: number): Promise<SensorReading[]>;
   getSensorDataByType(deviceId: string, type: string, limit?: number): Promise<SensorReading[]>;
+  createSensorData(data: { deviceId: string; sensorType: string; data: { value: number; unit: string; }; }): Promise<any>;
 
   // MQTT connection operations
   getMqttConnection(id: number): Promise<MqttConnection | undefined>;
@@ -50,6 +52,7 @@ export interface IStorage {
   getPetsByHouseholdId(householdId: number): Promise<Pet[]>;
   getPet(id: number): Promise<Pet | undefined>;
   getPetByChipNumber(chipNumber: string): Promise<Pet | undefined>;
+  getPetByKittyPawDeviceId(deviceId: string): Promise<Pet | undefined>;
   createPet(pet: InsertPet): Promise<Pet>;
   updatePet(id: number, pet: Partial<InsertPet>): Promise<Pet>;
   deletePet(id: number): Promise<boolean>;

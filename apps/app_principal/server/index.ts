@@ -61,7 +61,7 @@ import { storage } from "./storage";
     await mqttClient.loadAndConnect(user.id);
     log("Test data initialized successfully.");
   } catch (error) {
-    log(`Error initializing test data: ${error.stack}`, "error");
+    log(`Error initializing test data: ${(error as Error).stack}`, "error");
   }
 
   const server = await registerRoutes(app);

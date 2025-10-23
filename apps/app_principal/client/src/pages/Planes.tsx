@@ -1,6 +1,13 @@
 import { CheckCircle2 } from 'lucide-react';
 
-const PlanCard = ({ title, price, features, popular = false }) => {
+interface PlanCardProps {
+  title: string;
+  price: string;
+  features: string[];
+  popular?: boolean;
+}
+
+const PlanCard = ({ title, price, features, popular = false }: PlanCardProps) => {
   return (
     <div className={`border rounded-2xl p-6 flex flex-col ${popular ? 'border-violet-400 border-2' : 'border-gray-200'}`}>
       {popular && <div className="text-center mb-4"><span className="bg-violet-100 text-violet-700 text-xs font-semibold px-3 py-1 rounded-full">Más Popular</span></div>}
