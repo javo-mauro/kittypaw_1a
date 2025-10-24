@@ -8,17 +8,49 @@ WiFiManager::WiFiManager() : _lastReconnectAttempt(0) {}
 void WiFiManager::setup() {
     Serial.println("WiFi Manager setup.");
     if (LittleFS.exists("/wifi.json")) {
+        Serial.println("wifi.json exists.");
         File configFile = LittleFS.open("/wifi.json", "r");
-        StaticJsonDocument<256> doc;
-        deserializeJson(doc, configFile);
-        _ssid = doc["ssid"].as<String>();
-        _password = doc["password"].as<String>();
-        configFile.close();
-        Serial.println("WiFi credentials loaded.");
+        if (!configFile) {
+            Serial.println("Failed to open wifi.json for reading.");
+            return;
+        }
+        StaticJsonDocument<512> doc; // Increased size for array
+        DeserializationError error = deserializeJson(doc, configFile);
+        if (error) {
+            Serial.print("deserializeJson() failed: ");
+            Serial.println(error.c_str());
+            configFile.close();
+            return;
+        }
+        configFile.close(); // Close after deserialization
+
+        if (doc.isNull()) {
+            Serial.println("Deserialized JSON document is null.");
+            return;
+        }
+
+        if (!doc.containsKey("networks")) {
+            Serial.println("wifi.json does not contain 'networks' key.");
+            return;
+        }
+
+        JsonArray networksArray = doc["networks"].as<JsonArray>();
+        if (networksArray.isNull()) {
+            Serial.println("'networks' is not an array or is null.");
+            return;
+        }
+
+        Serial.print("Found ");
+        Serial.print(networksArray.size());
+        Serial.println(" networks in wifi.json.");
+
+        for (JsonObject network : networksArray) {
+            _knownNetworks.push_back({network["ssid"].as<String>(), network["password"].as<String>()});
+        }
+        Serial.println("WiFi credentials loaded into _knownNetworks.");
     } else {
-        Serial.println("wifi.json not found. Using default credentials.");
-        _ssid = "default_ssid";
-        _password = "default_password";
+        Serial.println("wifi.json not found. Starting with no known networks.");
+        // Optionally add a default network here if desired
     }
 
     WiFi.mode(WIFI_STA);
@@ -34,16 +66,63 @@ void WiFiManager::loop() {
     unsigned long now = millis();
     if (now - _lastReconnectAttempt > 5000) { // Try to connect every 5 seconds
         _lastReconnectAttempt = now;
-        Serial.print("Connecting to WiFi (SSID: ");
-        Serial.print(_ssid);
+
+        if (_knownNetworks.empty()) {
+            Serial.println("No known networks to connect to.");
+            return;
+        }
+
+        // Try to connect to the next known network
+        _currentNetworkIndex = (_currentNetworkIndex + 1) % _knownNetworks.size();
+        const WifiNetwork& net = _knownNetworks[_currentNetworkIndex];
+
+        Serial.print("Attempting to connect to WiFi (SSID: ");
+        Serial.print(net.ssid);
         Serial.println(")...");
-        WiFi.disconnect(); // Disconnect before trying to connect again
-        WiFi.begin(_ssid.c_str(), _password.c_str());
-        Serial.print("WiFi Status: ");
-        Serial.println(WiFi.status());
+        _connectToNetwork(net.ssid, net.password);
     }
 }
 
 bool WiFiManager::isConnected() {
     return WiFi.status() == WL_CONNECTED;
+}
+
+void WiFiManager::_connectToNetwork(const String& ssid, const String& password) {
+    WiFi.disconnect(); // Disconnect before trying to connect again
+    WiFi.begin(ssid.c_str(), password.c_str());
+
+    // Wait for connection or timeout
+    unsigned long connectStartTime = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - connectStartTime < 10000) { // 10 second timeout
+        delay(100);
+    }
+
+    if (WiFi.status() == WL_CONNECTED) {
+        Serial.print("WiFi connected! IP address: ");
+        Serial.println(WiFi.localIP());
+    } else {
+        Serial.print("WiFi connection failed! Status: ");
+        Serial.println(WiFi.status());
+    }
+}
+
+void WiFiManager::_saveNetworks() {
+    File configFile = LittleFS.open("/wifi.json", "w");
+    if (!configFile) {
+        Serial.println("Failed to open config file for writing.");
+        return;
+    }
+
+    StaticJsonDocument<512> doc;
+    JsonArray networksArray = doc.createNestedArray("networks");
+    for (const auto& net : _knownNetworks) {
+        JsonObject network = networksArray.createNestedObject(); // Corrected line
+        network["ssid"] = net.ssid;
+        network["password"] = net.password;
+    }
+
+    if (serializeJson(doc, configFile) == 0) {
+        Serial.println("Failed to write to config file.");
+    }
+    configFile.close();
 }
