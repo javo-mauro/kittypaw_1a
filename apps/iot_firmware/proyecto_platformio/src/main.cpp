@@ -28,8 +28,6 @@ unsigned long lastSensorPublish = 0;
 const long sensorPublishInterval = 5000; // 5 seconds
 
 // --- NTP TIME SETUP FUNCTION ---
-
-// --- NTP TIME SETUP FUNCTION ---
 void setupTime() {
     const char* ntpServer = "pool.ntp.org";
     // GMT+0, no daylight saving

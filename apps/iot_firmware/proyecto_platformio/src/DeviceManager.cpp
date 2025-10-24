@@ -15,9 +15,8 @@ DeviceManager::DeviceManager(ScaleManager& scaleManager)
 }
 
 void DeviceManager::setup() {
-    // Generate device ID from MAC address
-    _deviceId = "KP-" + WiFi.macAddress();
-    _deviceId.replace(":", "");
+    // Set fixed device ID
+    _deviceId = "KPCL0025";
 
     _loadConfig();
 

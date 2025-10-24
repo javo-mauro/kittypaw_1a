@@ -39,6 +39,8 @@ void WiFiManager::loop() {
         Serial.println(")...");
         WiFi.disconnect(); // Disconnect before trying to connect again
         WiFi.begin(_ssid.c_str(), _password.c_str());
+        Serial.print("WiFi Status: ");
+        Serial.println(WiFi.status());
     }
 }
 
