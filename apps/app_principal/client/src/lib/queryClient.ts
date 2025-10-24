@@ -21,7 +21,7 @@ export async function apiRequest<T>(
     credentials: 'include'
   };
 
-  const apiUrl = `${import.meta.env.VITE_API_URL}${url}`;
+  const apiUrl = `http://localhost:5000${url}`;
   try {
     console.log(`Enviando solicitud a ${apiUrl}`, requestInit);
     const res = await fetch(apiUrl, requestInit);

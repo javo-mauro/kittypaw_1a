@@ -1,6 +1,6 @@
 #include "SelfTestManager.h"
 #include <LittleFS.h>
-#include <ESP8266WiFi.h>
+#include <WiFi.h>
 #include <ArduinoJson.h>
 
 SelfTestManager::SelfTestManager() {

@@ -8,11 +8,11 @@
 #include "SelfTestManager.h"
 
 // --- Pin Definitions ---
-#define HX711_DOUT D1
-#define HX711_SCK D2
+#define HX711_DOUT 13 // GPIO13
+#define HX711_SCK 12  // GPIO12
 
 // --- Local MQTT Broker ---
-const char* MQTT_BROKER_IP = "192.168.0.6";
+const char* MQTT_BROKER_IP = "192.168.100.73";
 
 // --- Global Objects ---
 ScaleManager scaleManager(HX711_DOUT, HX711_SCK);

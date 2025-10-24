@@ -26,12 +26,14 @@ services:
       db:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgresql://kittypaw_user:kittypaw_password@db:5432/kittypaw_db?sslmode=disable
+      - DATABASE_URL=postgresql://kittypaw_user:kittypaw_password@db:5432/kittypaw_db
 
   frontend:
     build:
       context: ./apps/app_principal
       dockerfile: Dockerfile.frontend
+      args:
+        VITE_API_URL: http://backend:5000
     ports:
       - '5173:5173'
     depends_on:

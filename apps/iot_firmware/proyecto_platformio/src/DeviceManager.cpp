@@ -1,10 +1,10 @@
 #include "DeviceManager.h"
 #include <LittleFS.h>
 #include <ArduinoJson.h>
-#include <ESP8266WiFi.h>
+#include <WiFi.h>
 
 // Pin definitions from legacy code
-#define DHT_PIN D5
+#define DHT_PIN 14 // GPIO14
 #define LDR_PIN A0
 
 DeviceManager::DeviceManager(ScaleManager& scaleManager)

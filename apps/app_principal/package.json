@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "dev:client": "vite",
+    "dev:client": "VITE_API_URL=$VITE_API_URL vite",
     "dev:server": "tsx --watch --env-file .env.local server/index.ts",
     "build": "vite build && tsx esbuild.config.mjs",
     "start": "NODE_ENV=production node dist/index.js",

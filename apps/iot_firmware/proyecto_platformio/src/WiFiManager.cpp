@@ -1,5 +1,5 @@
 #include "WiFiManager.h"
-#include <ESP8266WiFi.h>
+#include <WiFi.h>
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 
