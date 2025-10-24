@@ -38,10 +38,21 @@ void DeviceManager::setDeviceMode(String mode) {
     _saveConfig();
 }
 
+#include <time.h> // Include for time functions
+
 String DeviceManager::getSensorData() {
     StaticJsonDocument<256> doc;
     doc["device_id"] = _deviceId;
-    doc["timestamp"] = millis(); // Use millis() for a stable timestamp
+
+    // Get current time and format it
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo); // Use localtime_r for timezone-adjusted time
+
+    char formattedTime[20]; // YYYY-MM-DDTHH:MM:SS + null terminator
+    strftime(formattedTime, sizeof(formattedTime), "%Y-%m-%dT%H:%M:%S", &timeinfo);
+    doc["timestamp"] = formattedTime;
 
     JsonObject payload = doc.createNestedObject("payload");
     payload["temperature"] = _tempHumManager->getTemperature();

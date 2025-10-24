@@ -9,6 +9,8 @@ Este documento es el tablero de control de tareas activas. Reemplaza al Roadmap 
 *   `[Backend]` Crear el endpoint `POST /api/devices/claim` para el onboarding. **[Owner: Ambos]**
 *   `[Frontend]` Crear el boceto de la vista para "Añadir Dispositivo" que incluirá el lector QR. **[Owner: Mauro]**
 *   `[IoT/Firmware]` Integrar funcionalidad de cámara en ESP32CAM y llevarla por protocolo html a una API donde pueda mover el viso por internet. **[Owner: Javier]** **[Status: Pendiente]**
+*   `[Firmware]` Listado de Wifis conocidas. **[Owner: Javier]** **[Status: Pendiente]**
+*   `[Firmware]` Reconexion de wifis conocidas. **[Owner: Javier]** **[Status: Pendiente]**
 
 ---
 

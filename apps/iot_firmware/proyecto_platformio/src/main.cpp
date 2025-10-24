@@ -31,7 +31,8 @@ const long sensorPublishInterval = 5000; // 5 seconds
 void setupTime() {
     const char* ntpServer = "pool.ntp.org";
     // GMT+0, no daylight saving
-    configTime(0, 0, ntpServer);
+    // GMT-4, no daylight saving
+    configTime(-4 * 3600, 0, ntpServer);
 
     Serial.print("Waiting for NTP time sync: ");
     time_t now = time(nullptr);
