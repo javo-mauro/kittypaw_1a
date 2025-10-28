@@ -1,5 +1,6 @@
 import paho.mqtt.client as mqtt
 from datetime import datetime
+import time
 
 # --- Configuracion ---
 BROKER_IP = "192.168.100.73"
@@ -39,21 +40,20 @@ def on_message(client, userdata, msg):
 # --- Programa Principal ---
 
 if __name__ == "__main__":
-    # Crear y configurar el cliente
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
     client.on_connect = on_connect
     client.on_message = on_message
 
-    print("Iniciando receptor local...")
+    print("Iniciando receptor temporal de MQTT...")
     try:
         client.connect(BROKER_IP, BROKER_PORT, 60)
         print(f"Intentando conectar a {BROKER_IP}...")
         
-        # Bucle infinito para mantener el script escuchando
-        client.loop_forever()
+        client.loop_start()
+        print("Escuchando por 15 segundos...")
+        time.sleep(15)
+        client.loop_stop()
         
-    except KeyboardInterrupt:
-        print("\nReceptor detenido por el usuario.")
     except Exception as e:
         print(f"Ocurrio un error: {e}")
     finally:
