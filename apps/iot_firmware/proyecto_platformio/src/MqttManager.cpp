@@ -46,7 +46,7 @@ void MqttManager::publishHealthReport(String report) {
 }
 
 void MqttManager::publishSensorData(String data) {
-    _mqttClient->publish("KPCL0022/pub", data.c_str());
+    _mqttClient->publish("KPCL0025/pub", data.c_str());
 }
 
 void MqttManager::_connect() {
