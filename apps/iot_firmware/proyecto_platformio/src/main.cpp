@@ -6,6 +6,8 @@
 #include "ScaleManager.h"
 #include "MqttManager.h"
 #include "SelfTestManager.h"
+#include "CameraManager.h"
+#include "WebServerManager.h"
 
 // --- Pin Definitions ---
 #define HX711_DOUT 13 // GPIO13
@@ -20,6 +22,8 @@ DeviceManager deviceManager(scaleManager);
 WiFiManager wifiManager;
 MqttManager mqttManager(deviceManager, MQTT_BROKER_IP);
 SelfTestManager selfTestManager;
+CameraManager cameraManager;
+WebServerManager webServerManager(cameraManager);
 
 // --- Global State ---
 bool healthReportSent = false;
@@ -68,6 +72,16 @@ void setup() {
 
     setupTime();
 
+    Serial.println("Setting up CameraManager...");
+    if (cameraManager.init()) {
+        Serial.println("CameraManager setup complete.");
+        Serial.println("Setting up WebServerManager...");
+        webServerManager.setup();
+        Serial.println("WebServerManager setup complete.");
+    } else {
+        Serial.println("CameraManager setup failed.");
+    }
+
     Serial.println("Setting up ScaleManager...");
     scaleManager.setup();
     Serial.println("ScaleManager setup complete.");
@@ -84,6 +98,7 @@ void setup() {
 }
 
 void loop() {
+    webServerManager.loop();
     wifiManager.loop();
     mqttManager.loop();
     scaleManager.loop();

@@ -26,6 +26,7 @@ Este documento es el tablero de control de tareas activas. Reemplaza al Roadmap 
 
 *   `[1c] [Firmware]` Implementar la lógica de pruebas en `SelfTestManager` para el auto-diagnóstico. **[Owner: Javier]**
 *   `[1d] [Frontend]` Investigar y solucionar el problema de caché del navegador/Vite que impide que el frontend cargue la configuración correcta de la URL de la API y WebSocket. **[Owner: Javier]** **[Priority: Blocker]**
+*   `[Hardware/Firmware]` Definir e implementar una fuente de alimentación estable para la ESP32-CAM para solucionar los problemas de streaming de video. **[Owner: Javier]**
 
 ---
 
