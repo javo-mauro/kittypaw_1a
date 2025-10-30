@@ -1,0 +1,7 @@
+{
+    "name": "Jdayne-project-1_inferencing",
+    "version": "1.0.0",
+    "build": {
+        "libLDFMode": "deep+"
+    }
+}

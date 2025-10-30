@@ -49,6 +49,10 @@ void MqttManager::publishSensorData(String data) {
     _mqttClient->publish("KPCL0025/pub", data.c_str());
 }
 
+void MqttManager::publish(String topic, String payload) {
+    _mqttClient->publish(topic.c_str(), payload.c_str());
+}
+
 void MqttManager::_connect() {
     Serial.println("Connecting to MQTT...");
     while (!_mqttClient->connected()) {

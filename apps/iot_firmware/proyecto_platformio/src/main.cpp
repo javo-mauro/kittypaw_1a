@@ -7,7 +7,11 @@
 #include "MqttManager.h"
 #include "SelfTestManager.h"
 #include "CameraManager.h"
+#include "ObjectDetector.h"
 #include "WebServerManager.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
 
 // --- Pin Definitions ---
 #define HX711_DOUT 13 // GPIO13
@@ -23,19 +27,27 @@ WiFiManager wifiManager;
 MqttManager mqttManager(deviceManager, MQTT_BROKER_IP);
 SelfTestManager selfTestManager;
 CameraManager cameraManager;
-WebServerManager webServerManager(cameraManager);
+ObjectDetector* objectDetector;
+WebServerManager* webServerManager; // Declared as pointer
 
 // --- Global State ---
 bool healthReportSent = false;
 String healthReportContent;
 unsigned long lastSensorPublish = 0;
 const long sensorPublishInterval = 5000; // 5 seconds
+QueueHandle_t detectionQueue;
+
+// --- Object Detection Task ---
+void detection_task(void *pvParameters) {
+    while (true) {
+        objectDetector->run();
+        vTaskDelay(100 / portTICK_PERIOD_MS); // Small delay to prevent watchdog timeout
+    }
+}
 
 // --- NTP TIME SETUP FUNCTION ---
 void setupTime() {
     const char* ntpServer = "pool.ntp.org";
-    // GMT+0, no daylight saving
-    // GMT-4, no daylight saving
     configTime(-4 * 3600, 0, ntpServer);
 
     Serial.print("Waiting for NTP time sync: ");
@@ -54,7 +66,10 @@ void setupTime() {
 
 void setup() {
     Serial.begin(115200);
-    LittleFS.begin();
+    if (!LittleFS.begin()) {
+        Serial.println("LittleFS Mount Failed!");
+        return; // Halt if LittleFS fails to mount
+    }
     Serial.println("\nStarting KittyPaw Firmware...");
 
     deviceManager.setup();
@@ -62,7 +77,6 @@ void setup() {
 
     wifiManager.setup();
 
-    // --- Wait for WiFi and Set Time ---
     Serial.println("Waiting for WiFi connection...");
     while (!wifiManager.isConnected()) {
         wifiManager.loop();
@@ -72,14 +86,34 @@ void setup() {
 
     setupTime();
 
+    detectionQueue = xQueueCreate(10, sizeof(detection_t));
+    objectDetector = new ObjectDetector(detectionQueue);
+    webServerManager = new WebServerManager(cameraManager, objectDetector); // Allocated after objectDetector
+
     Serial.println("Setting up CameraManager...");
     if (cameraManager.init()) {
         Serial.println("CameraManager setup complete.");
         Serial.println("Setting up WebServerManager...");
-        webServerManager.setup();
+        webServerManager->setup(); // Use pointer
         Serial.println("WebServerManager setup complete.");
     } else {
         Serial.println("CameraManager setup failed.");
+    }
+
+    Serial.println("Setting up ObjectDetector...");
+    if (objectDetector->init()) {
+        Serial.println("ObjectDetector setup complete.");
+        xTaskCreatePinnedToCore(
+            detection_task,          /* Task function. */
+            "DetectionTask",         /* name of task. */
+            20000,                   /* Stack size of task */
+            NULL,                    /* parameter of the task */
+            1,                       /* priority of the task */
+            NULL,                    /* Task handle to keep track of created task */
+            1);                      /* pin task to core 1 */
+        Serial.println("Object detection task started on Core 1.");
+    } else {
+        Serial.println("ObjectDetector setup failed.");
     }
 
     Serial.println("Setting up ScaleManager...");
@@ -90,7 +124,6 @@ void setup() {
     mqttManager.setup(deviceManager.getDeviceId());
     Serial.println("MqttManager setup complete.");
 
-    // Run self-test to prepare the report
     Serial.println("Running self-test...");
     healthReportContent = selfTestManager.runTests();
     Serial.println("Self-test complete.");
@@ -98,13 +131,27 @@ void setup() {
 }
 
 void loop() {
-    webServerManager.loop();
+    webServerManager->loop(); // Use pointer
     wifiManager.loop();
     mqttManager.loop();
     scaleManager.loop();
 
+    // Handle detection results
+    detection_t detection;
+    std::vector<detection_t> detections;
+    while (xQueueReceive(detectionQueue, &detection, 0) == pdTRUE) {
+        detections.push_back(detection);
+        // Also publish to MQTT
+        String topic = "kittypaw/" + deviceManager.getDeviceId() + "/detection";
+        String payload = "{\"label\":\"" + String(detection.label) + "\",\"value\":\"" + String(detection.value) + "\"}";
+        mqttManager.publish(topic, payload);
+    }
+    if (!detections.empty()) {
+        webServerManager->sendDetectionResults(detections); // Use pointer
+    }
+
+
     if (wifiManager.isConnected() && mqttManager.isConnected()) {
-        // Publish health report once on the first connection
         if (!healthReportSent) {
             Serial.println("Publishing health report...");
             mqttManager.publishHealthReport(healthReportContent);
@@ -117,7 +164,6 @@ void loop() {
             mqttManager.publishConsumptionEvent(event, deviceManager.getDeviceMode());
         }
 
-        // Periodically publish sensor data
         if (millis() - lastSensorPublish > sensorPublishInterval) {
             lastSensorPublish = millis();
             String sensorData = deviceManager.getSensorData();

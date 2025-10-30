@@ -60,19 +60,23 @@ void WiFiManager::setup() {
 
 void WiFiManager::loop() {
     if (WiFi.status() == WL_CONNECTED) {
-        return; // Already connected
+        if (!_connected) {
+            _connected = true;
+            Serial.print("WiFi connected! IP address: ");
+            Serial.println(WiFi.localIP());
+        }
+        return;
     }
 
+    _connected = false;
     unsigned long now = millis();
-    if (now - _lastReconnectAttempt > 5000) { // Try to connect every 5 seconds
+    if (now - _lastReconnectAttempt > 5000) { // 5 second timeout for each network
         _lastReconnectAttempt = now;
 
         if (_knownNetworks.empty()) {
-            Serial.println("No known networks to connect to.");
             return;
         }
 
-        // Try to connect to the next known network
         _currentNetworkIndex = (_currentNetworkIndex + 1) % _knownNetworks.size();
         const WifiNetwork& net = _knownNetworks[_currentNetworkIndex];
 
@@ -88,22 +92,8 @@ bool WiFiManager::isConnected() {
 }
 
 void WiFiManager::_connectToNetwork(const String& ssid, const String& password) {
-    WiFi.disconnect(); // Disconnect before trying to connect again
+    WiFi.disconnect();
     WiFi.begin(ssid.c_str(), password.c_str());
-
-    // Wait for connection or timeout
-    unsigned long connectStartTime = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - connectStartTime < 10000) { // 10 second timeout
-        delay(100);
-    }
-
-    if (WiFi.status() == WL_CONNECTED) {
-        Serial.print("WiFi connected! IP address: ");
-        Serial.println(WiFi.localIP());
-    } else {
-        Serial.print("WiFi connection failed! Status: ");
-        Serial.println(WiFi.status());
-    }
 }
 
 void WiFiManager::_saveNetworks() {

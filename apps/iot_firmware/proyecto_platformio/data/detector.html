@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP32-CAM Object Detector</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; }
+        #stream-container { position: relative; display: inline-block; }
+        #stream { width: 100%; max-width: 640px; }
+        #canvas { position: absolute; top: 0; left: 0; }
+        #controls { margin-top: 10px; }
+        button { padding: 10px 20px; font-size: 16px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>ESP32-CAM Object Detector</h1>
+    <div id="stream-container">
+        <img id="stream" src="/stream">
+        <canvas id="canvas"></canvas>
+    </div>
+    <div id="controls">
+        <button onclick="setObjectToDetect('all')">Detect All</button>
+        <button onclick="setObjectToDetect('Javier')">Detect Javier</button>
+        <button onclick="setObjectToDetect('mano')">Detect Hand</button>
+    </div>
+
+    <script>
+        const stream = document.getElementById('stream');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        let gateway;
+
+        window.addEventListener('load', onLoad);
+
+        function onLoad(event) {
+            initWebSocket();
+            initStream();
+        }
+
+        function initStream() {
+            // The MJPEG stream is set as the source of the image tag
+            // The browser will handle the streaming automatically
+        }
+
+        function initWebSocket() {
+            console.log('Trying to open a WebSocket connection...');
+            gateway = new WebSocket(`ws://${window.location.hostname}/ws`);
+            gateway.onopen = onOpen;
+            gateway.onclose = onClose;
+            gateway.onmessage = onMessage;
+        }
+
+        function onOpen(event) {
+            console.log('Connection opened');
+        }
+
+        function onClose(event) {
+            console.log('Connection closed');
+            setTimeout(initWebSocket, 2000);
+        }
+
+        function onMessage(event) {
+            const data = JSON.parse(event.data);
+            if (data.boxes) {
+                drawBoxes(data.boxes);
+            }
+        }
+
+        function setObjectToDetect(object) {
+            console.log(`Setting object to detect: ${object}`);
+            gateway.send(object);
+        }
+
+        function drawBoxes(boxes) {
+            // Match canvas size to the stream image size
+            if (canvas.width !== stream.offsetWidth || canvas.height !== stream.offsetHeight) {
+                canvas.width = stream.offsetWidth;
+                canvas.height = stream.offsetHeight;
+            }
+
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.strokeStyle = 'red';
+            context.lineWidth = 2;
+            context.font = '16px Arial';
+
+            boxes.forEach(box => {
+                // The bounding box coordinates are for a 96x96 image
+                // We need to scale them to the size of the displayed image
+                const scaleX = stream.offsetWidth / 96;
+                const scaleY = stream.offsetHeight / 96;
+
+                const x = box.x * scaleX;
+                const y = box.y * scaleY;
+                const width = box.w * scaleX;
+                const height = box.h * scaleY;
+
+                context.strokeRect(x, y, width, height);
+                context.fillStyle = 'red';
+                context.fillText(`${box.label} (${(box.value * 100).toFixed(1)}%)`, x, y > 10 ? y - 5 : 10);
+            });
+        }
+    </script>
+</body>
+</html>

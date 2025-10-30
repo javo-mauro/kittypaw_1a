@@ -15,6 +15,7 @@ public:
     void publishConsumptionEvent(const ConsumptionEvent& event, String deviceMode);
     void publishHealthReport(String report);
     void publishSensorData(String data);
+    void publish(String topic, String payload);
 
 private:
     DeviceManager& _deviceManager;

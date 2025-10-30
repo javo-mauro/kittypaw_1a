@@ -20,6 +20,7 @@ private:
     std::vector<WifiNetwork> _knownNetworks;
     unsigned long _lastReconnectAttempt = 0;
     int _currentNetworkIndex = -1; // Index of the currently connected network
+    bool _connected = false;
 
     void _connectToNetwork(const String& ssid, const String& password);
     void _saveNetworks(); // New function to save known networks to LittleFS
