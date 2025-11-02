@@ -66,9 +66,19 @@ void setupTime() {
 
 void setup() {
     Serial.begin(115200);
+    delay(1000); // Give serial a moment to initialize
     if (!LittleFS.begin()) {
         Serial.println("LittleFS Mount Failed!");
         return; // Halt if LittleFS fails to mount
+    }
+    Serial.println("LittleFS Mounted Successfully!");
+    Serial.println("Listing files in LittleFS:");
+    File root = LittleFS.open("/");
+    File file = root.openNextFile();
+    while(file){
+        Serial.print("  FILE: ");
+        Serial.println(file.name());
+        file = root.openNextFile();
     }
     Serial.println("\nStarting KittyPaw Firmware...");
 
@@ -79,6 +89,7 @@ void setup() {
 
     Serial.println("Waiting for WiFi connection...");
     while (!wifiManager.isConnected()) {
+        Serial.print(".");
         wifiManager.loop();
         delay(100);
     }
@@ -86,9 +97,14 @@ void setup() {
 
     setupTime();
 
+    Serial.println("DEBUG: After setupTime()");
+
     detectionQueue = xQueueCreate(10, sizeof(detection_t));
+    Serial.println("DEBUG: After detectionQueue creation");
     objectDetector = new ObjectDetector(detectionQueue);
+    Serial.println("DEBUG: After ObjectDetector instantiation");
     webServerManager = new WebServerManager(cameraManager, objectDetector); // Allocated after objectDetector
+    Serial.println("DEBUG: After WebServerManager instantiation");
 
     Serial.println("Setting up CameraManager...");
     if (cameraManager.init()) {
@@ -99,6 +115,7 @@ void setup() {
     } else {
         Serial.println("CameraManager setup failed.");
     }
+    Serial.println("DEBUG: After CameraManager setup");
 
     Serial.println("Setting up ObjectDetector...");
     if (objectDetector->init()) {
@@ -115,6 +132,7 @@ void setup() {
     } else {
         Serial.println("ObjectDetector setup failed.");
     }
+    Serial.println("DEBUG: After ObjectDetector setup");
 
     Serial.println("Setting up ScaleManager...");
     scaleManager.setup();

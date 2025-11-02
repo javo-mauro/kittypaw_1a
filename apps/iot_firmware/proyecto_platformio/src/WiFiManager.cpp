@@ -45,9 +45,21 @@ void WiFiManager::setup() {
         Serial.println(" networks in wifi.json.");
 
         for (JsonObject network : networksArray) {
-            _knownNetworks.push_back({network["ssid"].as<String>(), network["password"].as<String>()});
+            String ssid = network["ssid"].as<String>();
+            String password = network["password"].as<String>();
+            Serial.print("  Loading network: ");
+            Serial.print(ssid);
+            Serial.print(" (password length: ");
+            Serial.print(password.length());
+            Serial.println(")");
+            _knownNetworks.push_back({ssid, password});
         }
         Serial.println("WiFi credentials loaded into _knownNetworks.");
+        Serial.println("Known networks:");
+        for (const auto& net : _knownNetworks) {
+            Serial.print("  - ");
+            Serial.println(net.ssid);
+        }
     } else {
         Serial.println("wifi.json not found. Starting with no known networks.");
         // Optionally add a default network here if desired
@@ -70,7 +82,10 @@ void WiFiManager::loop() {
 
     _connected = false;
     unsigned long now = millis();
-    if (now - _lastReconnectAttempt > 5000) { // 5 second timeout for each network
+
+    // Only attempt to connect to a *new* network (or retry the current one) if a certain timeout has passed
+    // AND the current connection attempt has failed or timed out.
+    if (now - _lastReconnectAttempt > 5000 || WiFi.status() == WL_NO_SSID_AVAIL || WiFi.status() == WL_CONNECT_FAILED) {
         _lastReconnectAttempt = now;
 
         if (_knownNetworks.empty()) {

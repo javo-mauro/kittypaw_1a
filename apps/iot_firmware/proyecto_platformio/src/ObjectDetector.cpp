@@ -59,41 +59,37 @@ void ObjectDetector::run() {
         return;
     }
 
-    // bool converted = fmt2rgb888(fb->buf, fb->len, PIXFORMAT_JPEG, snapshot_buf);
-    esp_camera_fb_return(fb); // Return the frame buffer immediately
+    bool converted = fmt2rgb888(fb->buf, fb->len, PIXFORMAT_JPEG, snapshot_buf);
+    esp_camera_fb_return(fb);
 
-    // if(!converted){
-    //    ei_printf("Conversion failed\n");
-    //    free(snapshot_buf);
-    //    return;
-    // }
+    if(!converted){
+       ei_printf("Conversion failed\n");
+       free(snapshot_buf);
+       return;
+    }
 
-    Serial.println("Image captured successfully. Conversion and ML skipped for debugging.");
+    ei_impulse_result_t result = { 0 };
+    EI_IMPULSE_ERROR err = run_classifier(&signal, &result, debug_nn);
+    if (err != EI_IMPULSE_OK) {
+        ei_printf("ERR: Failed to run classifier (%d)\n", err);
+        free(snapshot_buf);
+        return;
+    }
 
-    // ei_impulse_result_t result = { 0 };
-    // EI_IMPULSE_ERROR err = run_classifier(&signal, &result, debug_nn);
-    // if (err != EI_IMPULSE_OK) {
-    //     ei_printf("ERR: Failed to run classifier (%d)\n", err);
-    //     free(snapshot_buf);
-    //     return;
-    // }
-
-    // for (uint32_t i = 0; i < result.bounding_boxes_count; i++) {
-    //     ei_impulse_result_bounding_box_t bb = result.bounding_boxes[i];
-    //     if (bb.value >= EI_CLASSIFIER_OBJECT_DETECTION_THRESHOLD) {
-    //         if (_target == "all" || _target == bb.label) {
-    //             detection_t detection;
-    //             strncpy(detection.label, bb.label, sizeof(detection.label) - 1);
-    //             detection.label[sizeof(detection.label) - 1] = '\0';
-    //             detection.value = bb.value;
-    //             detection.x = bb.x;
-    //             detection.y = bb.y;
-    //             detection.w = bb.width;
-    //             detection.h = bb.height;
-    //             xQueueSend(_queue, &detection, portMAX_DELAY);
-    //         }
-    //     }
-    // }
-
-    // free(snapshot_buf);
-}
+    for (uint32_t i = 0; i < result.bounding_boxes_count; i++) {
+        ei_impulse_result_bounding_box_t bb = result.bounding_boxes[i];
+        if (bb.value >= EI_CLASSIFIER_OBJECT_DETECTION_THRESHOLD) {
+            if (_target == "all" || _target == bb.label) {
+                detection_t detection;
+                strncpy(detection.label, bb.label, sizeof(detection.label) - 1);
+                detection.label[sizeof(detection.label) - 1] = '\0';
+                detection.value = bb.value;
+                detection.x = bb.x;
+                detection.y = bb.y;
+                detection.w = bb.width;
+                detection.h = bb.height;
+                xQueueSend(_queue, &detection, portMAX_DELAY);
+            }
+        }
+    }
+    free(snapshot_buf);}

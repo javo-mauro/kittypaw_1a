@@ -1,12 +1,16 @@
 {
   "networks": [
     {
-      "ssid": "Jeivos",
-      "password": "jdayne2121"
-    },
-    {
       "ssid": "Suarez_Mujica_891",
       "password": "SuarezMujica891"
+    },
+    {
+      "ssid": "Burgosa",
+      "password": "Lunita1176"
+    },
+    {
+      "ssid": "Jeivos",
+      "password": "jdayne2121"
     }
   ]
 }
